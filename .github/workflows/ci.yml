@@ -183,6 +183,39 @@ jobs:
             --golden eval/fixtures/golden.fixture.yaml \
             --baseline eval/fixtures/baseline.json \
             --out eval-fixture-results.json
+      - name: verify Redis persistence across a pod replacement
+        run: |
+          set -euo pipefail
+          r() { kubectl -n rahbar exec "$1" -- redis-cli "${@:2}"; }
+          phase="$(kubectl -n rahbar get pvc cache-data -o jsonpath='{.status.phase}')"
+          echo "pvc cache-data: $phase"; [ "$phase" = "Bound" ]
+          pod="$(kubectl -n rahbar get pod -l app=redis -o jsonpath='{.items[0].metadata.name}')"
+          key="ci-persist-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"; val="v-$(date +%s%N)"
+          [ "$(r "$pod" SET "$key" "$val")" = "OK" ]
+          # A SET reply only proves memory. Rewrite the AOF (written and fsynced to the
+          # volume by Redis) and wait until it has finished with status ok.
+          r "$pod" BGREWRITEAOF
+          for i in $(seq 1 30); do
+            info="$(r "$pod" INFO persistence | tr -d '\r')"
+            echo "$info" | grep -q '^aof_rewrite_in_progress:0' \
+              && echo "$info" | grep -q '^aof_rewrite_scheduled:0' && break
+            sleep 1
+          done
+          echo "$info" | grep -E '^(aof_enabled|aof_rewrite_in_progress|aof_last_bgrewrite_status|aof_last_write_status):'
+          echo "$info" | grep -qx 'aof_last_bgrewrite_status:ok'
+          echo "$info" | grep -qx 'aof_last_write_status:ok'
+          kubectl -n rahbar exec "$pod" -- ls -ln /data/appendonlydir
+          kubectl -n rahbar exec "$pod" -- sh -c 'ls /data/appendonlydir | grep -q "\.manifest$"'
+          # No grace period: Redis gets no chance to flush on shutdown, so only what is
+          # already on the volume can survive.
+          kubectl -n rahbar delete pod "$pod" --grace-period=0 --force --wait=true
+          kubectl -n rahbar rollout status deployment/redis --timeout=180s
+          kubectl -n rahbar wait --for=condition=Ready pod -l app=redis --timeout=120s
+          new="$(kubectl -n rahbar get pod -l app=redis -o jsonpath='{.items[0].metadata.name}')"
+          echo "replaced $pod with $new"; [ "$new" != "$pod" ]
+          got="$(r "$new" GET "$key")"
+          echo "after replacement: $key=$got"; [ "$got" = "$val" ]
+          echo "::notice title=redis persistence verified::pvc=$phase; $pod -> $new; $key survived a forced pod deletion"
       - name: capture cluster evidence (endpoints, hpa, top) as annotations
         run: |
           kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.7.2/components.yaml
@@ -228,6 +261,7 @@ jobs:
           note "chroma-0 logs" kubectl -n rahbar logs chroma-0 --tail=40
           note "chroma-0 describe" sh -c "kubectl -n rahbar describe pod chroma-0 | tail -n 35"
           note "api logs" kubectl -n rahbar logs deploy/api --tail=30
+          note "redis pvc and logs" sh -c "kubectl -n rahbar get pvc cache-data -o wide; kubectl -n rahbar logs deploy/redis --tail=25"
           note "indexer logs" kubectl -n rahbar logs job/reindex-ci --all-containers --tail=30
       - name: diagnostics on failure
         if: failure()
