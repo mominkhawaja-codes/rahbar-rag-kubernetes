@@ -81,7 +81,7 @@ jobs:
       - name: build
         run: docker build -t rahbar-${{ matrix.component }}:${{ github.sha }} ${{ matrix.component }}
       - name: trivy scan
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: rahbar-${{ matrix.component }}:${{ github.sha }}
           severity: CRITICAL,HIGH
