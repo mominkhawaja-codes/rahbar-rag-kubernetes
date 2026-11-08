@@ -78,7 +78,8 @@ jobs:
               -p "{\"data\":{\"CHUNK_SIZE\":\"$size\",\"CHUNK_OVERLAP\":\"$overlap\",\"LLM_PROVIDER\":\"stub\"}}"
             kubectl -n rahbar create job --from=cronjob/reindex "index-$size"
             kubectl -n rahbar wait --for=condition=complete "job/index-$size" --timeout=2400s
-            kubectl -n rahbar logs "job/index-$size" | grep -E '"(corpus chunked|embedded|indexer finished)"' || true
+            line="$(kubectl -n rahbar logs "job/index-$size" | grep -E '"corpus chunked"' | tail -n 1)"
+            echo "::notice title=index stats $size/$overlap::${line}"
             kubectl -n rahbar rollout restart deployment/api
             kubectl -n rahbar rollout status deployment/api --timeout=300s
             pkill -f "port-forward svc/api" || true
@@ -93,6 +94,8 @@ jobs:
             "{\"data\":{\"CHUNK_SIZE\":\"400\",\"CHUNK_OVERLAP\":\"50\",\"LLM_PROVIDER\":\"ollama-incluster\",\"LLM_MODEL\":\"${LLM_MODEL}\",\"LLM_TIMEOUT\":\"300\"}}"
           kubectl -n rahbar create job --from=cronjob/reindex index-final
           kubectl -n rahbar wait --for=condition=complete job/index-final --timeout=2400s
+          line="$(kubectl -n rahbar logs job/index-final | grep -E '"corpus chunked"' | tail -n 1)"
+          echo "::notice title=index stats final 400/50::${line}"
           kubectl -n rahbar rollout restart deployment/api
           kubectl -n rahbar rollout status deployment/api --timeout=300s
           pkill -f "port-forward svc/api" || true

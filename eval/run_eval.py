@@ -157,6 +157,7 @@ def summarise(rows: list[dict]) -> dict:
             "citation_validity": validity, "answered_from_context": answered,
             "must_abstain": row["must_abstain"], "expect_found": hit,
             "cached": bool(resp.get("cached")), "seconds": row.get("seconds"),
+            "error": resp.get("error"),
             "top_score": retrieved[0]["score"] if retrieved else None,
         })
     return {
@@ -168,6 +169,7 @@ def summarise(rows: list[dict]) -> dict:
         "abstention_correctness": round(abstain_ok / abstain_total, 4) if abstain_total else None,
         "false_abstention_rate": round(false_abstain / answerable, 4) if answerable else None,
         "expect_found_rate": round(expect_hits / expect_total, 4) if expect_total else None,
+        "errors": sum(1 for q in per_question if q["error"]),
         "per_question": per_question,
     }
 
@@ -212,7 +214,14 @@ def main() -> int:
     with httpx.Client(timeout=args.timeout, headers=headers) as client:
         for q in questions:
             started = time.perf_counter()
-            response = ask(client, args.api, q["question"])
+            try:
+                response = ask(client, args.api, q["question"])
+            except httpx.HTTPError as exc:
+                # One failed request must not discard every other measurement. It is
+                # recorded as a non-answer with no retrieval, so it counts against
+                # recall and against answerable questions, never in the system's favour.
+                response = {"answer": "", "citations": [], "retrieved": [],
+                            "answered_from_context": False, "error": f"{type(exc).__name__}: {exc}"}
             rows.append({
                 "id": q["id"], "type": q.get("type", "ordinary"),
                 "must_abstain": bool(q.get("must_abstain", False)),
