@@ -8,12 +8,13 @@ import sys
 import time
 import urllib.error
 import urllib.request
+from email.message import Message   # HTTP headers: case-insensitive get()
 
 BASE, HOST = "http://localhost", "rahbar.local"
 
 
 def request(path: str, host: str | None = HOST, body: dict | None = None,
-            headers: dict | None = None) -> tuple[int, dict, bytes]:
+            headers: dict | None = None) -> tuple[int, Message, bytes]:
     data = json.dumps(body).encode() if body is not None else None
     req = urllib.request.Request(BASE + path, data=data, method="POST" if data else "GET")
     if host:
@@ -24,11 +25,11 @@ def request(path: str, host: str | None = HOST, body: dict | None = None,
         req.add_header(k, v)
     try:
         with urllib.request.urlopen(req, timeout=60) as r:
-            out = (r.status, dict(r.headers), r.read())
+            out = (r.status, r.headers, r.read())
     except urllib.error.HTTPError as e:
-        out = (e.code, dict(e.headers), e.read())
+        out = (e.code, e.headers, e.read())
     except OSError as e:                     # connection refused, timeout, ...
-        out = (0, {}, repr(e).encode())
+        out = (0, Message(), repr(e).encode())
     LAST.update(status=out[0], body=out[2])
     return out
 
