@@ -190,6 +190,21 @@ jobs:
           name: eval-fixture-results
           path: eval-fixture-results.json
           if-no-files-found: ignore
+      - name: diagnostics as annotations (readable without access to the raw logs)
+        if: failure()
+        run: |
+          note() {   # one annotation per diagnostic, newlines encoded for the runner
+            local title="$1"; shift
+            local out; out="$("$@" 2>&1 | tail -n 40)"
+            out="${out//'%'/'%25'}"; out="${out//$'\r'/}"; out="${out//$'\n'/'%0A'}"
+            echo "::warning title=${title}::${out}"
+          }
+          note "pods" kubectl -n rahbar get pods -o wide
+          note "events" sh -c "kubectl -n rahbar get events --sort-by=.lastTimestamp | tail -n 30"
+          note "chroma-0 logs" kubectl -n rahbar logs chroma-0 --tail=40
+          note "chroma-0 describe" sh -c "kubectl -n rahbar describe pod chroma-0 | tail -n 35"
+          note "api logs" kubectl -n rahbar logs deploy/api --tail=30
+          note "indexer logs" kubectl -n rahbar logs job/reindex-ci --all-containers --tail=30
       - name: diagnostics on failure
         if: failure()
         run: |
