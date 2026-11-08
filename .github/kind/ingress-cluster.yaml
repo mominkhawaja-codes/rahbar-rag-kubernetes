@@ -1,0 +1,11 @@
+# kind cluster for the CD smoke test: port 80 on the runner reaches the node, where the
+# ingress-nginx controller listens with hostPort 80. Requests to http://localhost/ go
+# through the real Ingress controller, not a port-forward.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 80
+        hostPort: 80
+        protocol: TCP

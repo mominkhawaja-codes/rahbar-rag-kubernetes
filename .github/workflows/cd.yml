@@ -86,6 +86,15 @@ jobs:
       - uses: helm/kind-action@1544676c07bb3570fcb70166beaa07c4528fd4aa # v1.15.1
         with:
           cluster_name: rahbar
+          config: .github/kind/ingress-cluster.yaml     # maps runner port 80 to the node
+      - name: install ingress-nginx (controller-v1.15.1, checksum verified)
+        run: |
+          curl -sfL -o ingress-nginx.yaml \
+            https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.15.1/deploy/static/provider/kind/deploy.yaml
+          echo "2a3ae008c8786431115502644e77ab398fdebfb721a5d1195ed3089cde3299df  ingress-nginx.yaml" | sha256sum -c -
+          kubectl apply -f ingress-nginx.yaml
+          kubectl -n ingress-nginx wait --for=condition=complete job --all --timeout=180s
+          kubectl -n ingress-nginx rollout status deployment/ingress-nginx-controller --timeout=300s
       - name: point the ci overlay at the published images
         working-directory: k8s/overlays/ci
         run: |
@@ -105,12 +114,21 @@ jobs:
           kubectl -n rahbar rollout status deployment/api --timeout=300s
           kubectl -n rahbar rollout status deployment/ui --timeout=180s
           kubectl -n rahbar get pods,svc,endpoints,hpa -o wide
-      - name: smoke test through the api Service
+      - name: smoke test through the Ingress (/ and /api/ask on Host rahbar.local)
         run: |
-          kubectl -n rahbar port-forward svc/api 8000:80 >/tmp/pf.log 2>&1 &
-          for i in $(seq 1 30); do curl -sf http://localhost:8000/readyz && break; sleep 2; done
-          curl -sf -X POST http://localhost:8000/api/ask -H 'Content-Type: application/json' \
-            -d '{"question": "When is a student placed on academic warning?"}'
+          kubectl -n rahbar get ingress rahbar -o wide
+          python3 .github/kind/smoke_ingress.py
+      - name: prove the requests went through ingress-nginx
+        run: |
+          set -euo pipefail
+          logs="$(kubectl -n ingress-nginx logs deploy/ingress-nginx-controller --tail=200)"
+          api="$(echo "$logs" | grep '"POST /api/ask' | grep 'rahbar-api-80' | tail -n 1)"
+          ui="$(echo "$logs" | grep '"GET / ' | grep 'rahbar-ui-80' | tail -n 1)"
+          echo "api: $api"; echo "ui: $ui"
+          [ -n "$api" ] && [ -n "$ui" ]
+          api="${api//'%'/'%25'}"; ui="${ui//'%'/'%25'}"
+          echo "::notice title=ingress access log (api)::${api}"
+          echo "::notice title=ingress access log (ui)::${ui}"
       - name: diagnostics as annotations
         if: failure()
         run: |
@@ -122,6 +140,8 @@ jobs:
           }
           note "pods" kubectl -n rahbar get pods -o wide
           note "events" sh -c "kubectl -n rahbar get events --sort-by=.lastTimestamp | tail -n 30"
+          note "ingress" sh -c "kubectl -n rahbar describe ingress rahbar | tail -n 20"
+          note "ingress-nginx logs" kubectl -n ingress-nginx logs deploy/ingress-nginx-controller --tail=30
 
   deploy:
     # A real cluster, only when a KUBECONFIG secret exists (skipped otherwise).
