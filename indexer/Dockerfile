@@ -6,16 +6,20 @@
 # The documents are baked in (docs/PIPELINE.md, "How the documents reach the Job"):
 # `make stage-corpus` copies corpus/raw/ into indexer/corpus/ and eval/fixtures/ into
 # indexer/fixtures/ before the build. CORPUS_DIR picks one: /corpus or /fixtures.
+#
+# Base pinned by tag and digest (see api/Dockerfile); `apt-get upgrade` applies Debian
+# security fixes released since, including for the OCR libraries.
 
-FROM python:3.12.10-slim-bookworm AS build
+FROM python:3.12.16-slim-bookworm@sha256:935c3c5b12357a7e10caa9c1e6ca5692344d97cf229832ef584be2cec9fc03df AS build
 ENV PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1
 WORKDIR /build
 COPY requirements.txt .
 RUN pip install --prefix=/install -r requirements.txt
 
-FROM python:3.12.10-slim-bookworm
+FROM python:3.12.16-slim-bookworm@sha256:935c3c5b12357a7e10caa9c1e6ca5692344d97cf229832ef584be2cec9fc03df
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 CORPUS_DIR=/corpus
 RUN apt-get update \
+ && apt-get upgrade -y --no-install-recommends \
  && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-eng poppler-utils \
  && rm -rf /var/lib/apt/lists/* \
  && groupadd --system --gid 10001 rahbar \
