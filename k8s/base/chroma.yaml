@@ -42,6 +42,7 @@ spec:
     metadata:
       labels: {app: chroma}
     spec:
+      serviceAccountName: rahbar-chroma
       automountServiceAccountToken: false
       # Without this, Kubernetes injects CHROMA_PORT=tcp://<ip>:8000 for the "chroma" Service,
       # and Chroma 1.x reads every CHROMA_* variable as config: it panics ("expected u16 for

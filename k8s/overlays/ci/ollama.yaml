@@ -1,6 +1,14 @@
 # CI only: Ollama inside the kind cluster, used for embeddings (nomic-embed-text).
 # Generation uses the stub provider in CI: tests and gates never depend on a real LLM.
 apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: rahbar-ollama
+  namespace: rahbar
+  labels: {app: ollama}
+automountServiceAccountToken: false
+---
+apiVersion: v1
 kind: Service
 metadata:
   name: ollama
@@ -26,6 +34,7 @@ spec:
     metadata:
       labels: {app: ollama}
     spec:
+      serviceAccountName: rahbar-ollama
       automountServiceAccountToken: false
       enableServiceLinks: false
       containers:

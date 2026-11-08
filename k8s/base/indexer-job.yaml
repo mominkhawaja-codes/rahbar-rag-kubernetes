@@ -14,6 +14,7 @@ spec:
     metadata:
       labels: {app: indexer}
     spec:
+      serviceAccountName: rahbar-indexer
       automountServiceAccountToken: false
       enableServiceLinks: false
       restartPolicy: OnFailure

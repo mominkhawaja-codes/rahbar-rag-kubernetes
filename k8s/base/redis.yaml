@@ -45,6 +45,7 @@ spec:
     metadata:
       labels: {app: redis}
     spec:
+      serviceAccountName: rahbar-redis
       automountServiceAccountToken: false
       enableServiceLinks: false
       securityContext:
