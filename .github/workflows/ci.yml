@@ -216,6 +216,28 @@ jobs:
           got="$(r "$new" GET "$key")"
           echo "after replacement: $key=$got"; [ "$got" = "$val" ]
           echo "::notice title=redis persistence verified::pvc=$phase; $pod -> $new; $key survived a forced pod deletion"
+      - name: probe NetworkPolicy paths (allowed must work; denied is reported)
+        run: |
+          set -uo pipefail
+          api="$(kubectl -n rahbar get pod -l app=api -o jsonpath='{.items[0].metadata.name}')"
+          ui="$(kubectl -n rahbar get pod -l app=ui -o jsonpath='{.items[0].metadata.name}')"
+          py='import socket,sys; socket.create_connection((sys.argv[1], int(sys.argv[2])), timeout=3)'
+          ok=1
+          for target in chroma:8000 redis:6379; do
+            if kubectl -n rahbar exec "$api" -- python -c "$py" "${target%:*}" "${target#*:}"; then
+              echo "allowed  api -> $target: connected"
+            else
+              echo "::error title=networkpolicy::api -> $target should be allowed but failed"; ok=0
+            fi
+          done
+          if kubectl -n rahbar exec "$ui" -- wget -q -T 3 -O /dev/null http://chroma:8000/api/v2/heartbeat; then
+            denied="ui -> chroma:8000 CONNECTED: this cluster's CNI is not enforcing NetworkPolicy"
+          else
+            denied="ui -> chroma:8000 blocked (connection failed, as the policy requires)"
+          fi
+          echo "$denied"
+          echo "::notice title=networkpolicy probe::api -> chroma:8000 and redis:6379 allowed: $([ $ok = 1 ] && echo yes || echo NO); $denied"
+          [ "$ok" = 1 ]
       - name: capture cluster evidence (endpoints, hpa, top) as annotations
         run: |
           kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.7.2/components.yaml

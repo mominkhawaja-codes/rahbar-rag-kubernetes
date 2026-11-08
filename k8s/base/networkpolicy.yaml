@@ -1,6 +1,8 @@
-# Deny by default, then allow exactly the arrows in the architecture diagram:
-#   ingress-nginx -> ui, api      api -> chroma, redis, LLM      indexer -> chroma, Ollama
-# Every pod may resolve DNS.
+# Deny by default, then allow exactly the paths the system uses (handout section 4.7):
+#   ingress-nginx -> ui:8080, api:8000      api -> chroma:8000, redis:6379, LLM
+#   indexer -> chroma:8000, Ollama           every pod -> CoreDNS:53
+# There is no ui -> api pod rule on purpose: the ui is static files, and the browser calls
+# /api through the Ingress (allowed above). No ui pod ever opens a connection to an api pod.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -19,9 +21,11 @@ spec:
   podSelector: {}
   policyTypes: ["Egress"]
   egress:
-    - to:
+    - to:                       # CoreDNS only, not every pod in kube-system
         - namespaceSelector:
             matchLabels: {kubernetes.io/metadata.name: kube-system}
+          podSelector:
+            matchLabels: {k8s-app: kube-dns}
       ports:
         - {protocol: UDP, port: 53}
         - {protocol: TCP, port: 53}
@@ -29,17 +33,32 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: ingress-to-ui-and-api
+  name: ingress-to-ui
   namespace: rahbar
 spec:
   podSelector:
-    matchExpressions:
-      - {key: app, operator: In, values: [ui, api]}
+    matchLabels: {app: ui}
   policyTypes: ["Ingress"]
   ingress:
     - from:
         - namespaceSelector:
             matchLabels: {kubernetes.io/metadata.name: ingress-nginx}
+      ports: [{protocol: TCP, port: 8080}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ingress-to-api
+  namespace: rahbar
+spec:
+  podSelector:
+    matchLabels: {app: api}
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: ingress-nginx}
+      ports: [{protocol: TCP, port: 8000}]
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
