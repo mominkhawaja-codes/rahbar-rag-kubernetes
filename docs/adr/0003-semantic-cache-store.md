@@ -16,7 +16,7 @@ rollout. A cached answer must also never outlive the index it was built from.
   its entries. `strategy: Recreate`, because the ReadWriteOnce volume can be mounted by
   one pod at a time.
 - **Match:** an exact normalised question match by key first, then cosine similarity of
-  question embeddings ≥ `CACHE_THRESHOLD` (0.95), scanning at most the newest
+  question embeddings ≥ `CACHE_THRESHOLD` (0.95, measured: see below), scanning at most the newest
   `CACHE_MAX_ENTRIES` entries of the current generation (`api/app/services/cache.py`).
 - **Invalidation:** every key contains a generation hash of the collection's `index_id`,
   the embedding model, the LLM provider and model, the prompt version and the relevance
@@ -49,3 +49,17 @@ rollout. A cached answer must also never outlive the index it was built from.
   reporting Redis without failing readiness.
 - Watch: `rahbar_cache_total{result="hit"}` against `miss`, and false hits found in the
   threshold experiment (`docs/PIPELINE.md`, "Semantic cache").
+
+## Threshold measurement (8 Nov 2026)
+Measured with the real model, not chosen by feel: `eval/cache_threshold.py` over 25
+labelled pairs, `nomic-embed-text`, a real Redis (workflow `cache-threshold`, run
+42517013627). Results and method are in `docs/PIPELINE.md`, "Semantic cache".
+
+- Zero false hits from 0.94 upward; the first false hit appears at 0.93 (Dean's List vs
+  Rector's List, similarity 0.933).
+- **0.95 is kept:** identical measured outcome to 0.94, with a wider margin over 0.933.
+- **Consequence for this design:** at a safe threshold the semantic part of the cache adds
+  nothing on this test set. All 8 paraphrases miss, and only exact or normalised repeats
+  hit. With `nomic-embed-text`, paraphrases (0.735 to 0.939) and near misses (up to 0.933)
+  overlap. A cache that should also catch paraphrases needs more than a cosine threshold
+  over the question alone: for example, require the same top retrieved chunk ids as well.

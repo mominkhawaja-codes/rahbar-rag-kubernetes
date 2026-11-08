@@ -173,12 +173,48 @@ index id, the embedding model, the provider and model, the prompt version and th
 so a re-index starts a fresh cache. Never cached: abstentions, fallbacks, answers without
 a valid citation, and follow-ups ("what about MS?").
 
-**Thresholds:** 0.95 is the shipped default, chosen before measurement because a false hit
-returns a *confident wrong answer*, while a miss only costs latency. To confirm or lower
-it, try 0.90, 0.93 and 0.95 on paraphrase pairs from the golden set, and look for the
-classic false hit: questions differing in one number or degree level ("BS fee per credit
-hour" vs "MS fee per credit hour"). **Not measured yet**: record the pairs and
-similarities here when the cluster runs.
+**Threshold: 0.95, measured.** `eval/cache_threshold.py` embeds 25 labelled question pairs
+(`eval/cache_pairs.yaml`, written from the corpus before measuring) with the API's own
+`OllamaEmbedder`, i.e. `nomic-embed-text` with the `search_query:` prefix, and counts what
+each threshold would do. Run `cache-threshold`
+[42517013627](https://github.com/mominkhawaja-codes/rahbar-rag-kubernetes/actions/runs/42517013627)
+(commit c4efade, Ollama 0.5.7, Redis 8.8.4). A false hit is a hit on a pair whose answers
+differ (near misses, version pairs, must-abstain topics; 13 such pairs). The 2 follow-up
+pairs are not measured: they never reach the cache.
+
+| Threshold | True hits | False hits | Misses | False-hit rate | Pairs that hit falsely |
+| --- | --- | --- | --- | --- | --- |
+| 0.80 | 9 | 8 | 1 | 0.615 | n1 n2 n3 n6 n8 v1 v2 a2 |
+| 0.85 | 7 | 7 | 3 | 0.538 | n2 n3 n6 n8 v1 v2 a2 |
+| 0.88 | 7 | 7 | 3 | 0.538 | n2 n3 n6 n8 v1 v2 a2 |
+| 0.90 | 7 | 4 | 3 | 0.308 | n2 n3 n6 v2 |
+| 0.92 | 4 | 2 | 6 | 0.154 | n2 n6 |
+| 0.93 | 3 | 1 | 7 | 0.077 | n2 |
+| 0.94 | 2 | 0 | 8 | 0 | |
+| **0.95** | **2** | **0** | **8** | **0** | |
+| 0.96 to 0.99 | 2 | 0 | 8 | 0 | |
+
+- **The false hit that rules out 0.93:** n2, "What SGPA is needed for the Dean's List of
+  Honors?" vs "... for the Rector's List of Honors?", similarity **0.933**. One word apart,
+  different answers (3.50 to 3.99 vs 4.00). At 0.92, n6 (B+ vs B- grade points, 0.928)
+  also hits.
+- **Chosen: 0.95.** The lecture's rule (lowest threshold with zero false hits) gives 0.94.
+  0.95 produces exactly the same measured result on this set and keeps 0.017 rather than
+  0.007 above the worst near miss, so we keep it.
+- **What this costs:** at any zero-false-hit threshold only the 2 exact or normalised repeats
+  hit; all 8 genuine paraphrases miss (their similarities are 0.735 to 0.939). With this
+  model, same-answer paraphrases and different-answer near misses overlap, so a similarity
+  threshold cannot separate them. The cache is safe, and in practice serves repeats.
+- **Checked against a real `RedisCache`** at 0.94 and 0.95: 23 of 23 lookups match the
+  computed decision; an entry stored under one index generation is a miss under the next
+  (re-index invalidation); an abstention and both follow-ups are refused by
+  `should_cache`/`is_followup`.
+- **Limits:** 25 pairs is a small sample, and a margin of 0.017 is thin; a new phrasing could
+  cross it. The pairs are ours, not real user traffic. Version pairs were measured without
+  the generation key distinguishing current from historical questions: a history question
+  that scored above 0.95 against a cached current-rules answer would be served that answer.
+- **Reproduce:** run the `cache-threshold` workflow, or locally with Ollama and Redis:
+  `OLLAMA_URL=http://localhost:11434 REDIS_URL=redis://localhost:6379/0 python eval/cache_threshold.py`.
 
 ## Evaluation method
 

@@ -23,7 +23,7 @@ data:
   RELEVANCE_FLOOR: "0.45"
   CACHE_BACKEND: "redis"
   REDIS_URL: "redis://redis:6379/0"
-  CACHE_THRESHOLD: "0.95"
+  CACHE_THRESHOLD: "0.95"            # measured: zero false hits from 0.94 up (ADR 0003)
   CACHE_TTL: "86400"
   LOG_LEVEL: "INFO"
   CORPUS_DIR: "/corpus"
