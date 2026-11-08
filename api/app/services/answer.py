@@ -2,7 +2,8 @@
 
     1. semantic cache lookup (services/cache.py)          - skipped for follow-ups
     2. retrieve top-k, superseded filtered out (retrieval/)
-    3. relevance floor: nothing relevant -> decline without calling the model
+    3. relevance floor and lexical support: nothing relevant, or nothing that mentions
+       what the question is about -> decline without calling the model
     4. generate with the Answer schema, one retry on invalid output (providers/llm/)
     5. safe fallback when generation fails or times out
     6. citation check: every citation must name a passage the model was given
@@ -30,7 +31,8 @@ from ..retrieval.base import Retriever
 from ..routes import metrics
 from ..schemas import Answer, AskResponse, Passage, RetrievedRef
 from .cache import NullCache, SemanticCache, is_followup, should_cache
-from .grounding import abstention, apply_relevance_floor, check_citations, fallback
+from .grounding import (abstention, apply_relevance_floor, check_citations, fallback,
+                        has_lexical_support)
 
 log = logging.getLogger("rahbar.answer")
 
@@ -118,6 +120,10 @@ def answer_question(
     if not grounded:
         metrics.ABSTENTIONS.labels(reason="relevance_floor").inc()
         answer, declined = abstention("no passage above the relevance floor"), "relevance_floor"
+    elif not has_lexical_support(question, grounded):
+        metrics.ABSTENTIONS.labels(reason="no_lexical_support").inc()
+        answer = abstention("no passage mentions anything the question is about")
+        declined = "no_lexical_support"
     else:
         # 4-6. generate, fall back, check citations
         answer, fallback_reason = _generate(question, grounded, provider)

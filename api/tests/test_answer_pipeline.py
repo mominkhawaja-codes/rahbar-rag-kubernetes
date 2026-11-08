@@ -86,7 +86,7 @@ def test_citation_without_clause_suffix_is_mapped_to_the_retrieved_section(
 
 
 def test_semantic_cache_serves_the_second_identical_question(settings: Settings) -> None:
-    p = passage(1, 0.9)
+    p = passage(1, 0.9, text="5.4 Minimum CGPA required to avoid academic warning is 2.00.")
     retriever, provider = FixedRetriever([p]), ScriptedProvider(grounded_answer(p))
     cache = MemoryCache(threshold=0.95, ttl=60, max_entries=10)
     first = answer_question("What is the CGPA rule?", retriever, provider, settings,
