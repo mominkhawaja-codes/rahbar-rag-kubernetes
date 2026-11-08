@@ -1,5 +1,9 @@
 # CI: every push and pull request to dev and main, and called by cd.yml before publishing.
-# Order: lint + unit tests + manifest validation -> image build and scan -> e2e eval gate.
+# Order: lint + unit tests + manifest validation -> build, scan and save each image once
+#        -> e2e eval gate on kind, using exactly the images that were scanned.
+#
+# Every third-party action is pinned to a full commit SHA (the tag is in the comment);
+# Dependabot (.github/dependabot.yml) proposes updates.
 name: ci
 
 on:
@@ -18,12 +22,18 @@ env:
 jobs:
   lint:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
+          cache-dependency-path: |
+            api/requirements*.txt
+            indexer/requirements*.txt
       - run: pip install -r api/requirements-dev.txt -r indexer/requirements-dev.txt
       - name: ruff
         run: ruff check api indexer eval corpus
@@ -34,12 +44,18 @@ jobs:
 
   test:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
+          cache-dependency-path: |
+            api/requirements*.txt
+            indexer/requirements*.txt
       - run: pip install -r api/requirements-dev.txt -r indexer/requirements-dev.txt
       - name: pytest (stubs only, no network, no model)
         run: |
@@ -51,12 +67,17 @@ jobs:
 
   manifests:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - name: install kubeconform
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: install kubeconform v0.6.7 (checksum verified)
         run: |
-          curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz \
-            | sudo tar xz -C /usr/local/bin kubeconform
+          curl -sSLO https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz
+          curl -sSLO https://github.com/yannh/kubeconform/releases/download/v0.6.7/CHECKSUMS
+          grep ' kubeconform-linux-amd64.tar.gz$' CHECKSUMS | sha256sum -c -
+          sudo tar xzf kubeconform-linux-amd64.tar.gz -C /usr/local/bin kubeconform
       - name: kubeconform every overlay
         run: |
           for overlay in dev prod ci; do
@@ -68,47 +89,75 @@ jobs:
   images:
     needs: [lint, test, manifests]
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     strategy:
+      fail-fast: false            # one image's findings must not hide the others' results
       matrix:
         component: [api, indexer, ui]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: stage the fixture corpus into the indexer build context
         if: matrix.component == 'indexer'
         run: |
           mkdir -p indexer/corpus indexer/fixtures
           cp eval/fixtures/*.md indexer/fixtures/ && rm -f indexer/fixtures/README.md
       - name: build
-        run: docker build -t rahbar-${{ matrix.component }}:${{ github.sha }} ${{ matrix.component }}
-      - name: trivy scan
-        uses: aquasecurity/trivy-action@v0.36.0
+        run: docker build --pull -t rahbar-${{ matrix.component }}:ci ${{ matrix.component }}
+      - name: trivy report (all severities with a fix, for the log)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
-          image-ref: rahbar-${{ matrix.component }}:${{ github.sha }}
+          image-ref: rahbar-${{ matrix.component }}:ci
+          scanners: vuln
+          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "0"
+          format: table
+      - name: trivy gate (fails on any fixable HIGH or CRITICAL)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: rahbar-${{ matrix.component }}:ci
+          scanners: vuln
           severity: CRITICAL,HIGH
           ignore-unfixed: true
           exit-code: "1"
+          format: table
+          skip-setup-trivy: true
+      - name: save the scanned image for the e2e job
+        run: docker save rahbar-${{ matrix.component }}:ci | gzip > image-${{ matrix.component }}.tar.gz
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: image-${{ matrix.component }}
+          path: image-${{ matrix.component }}.tar.gz
+          retention-days: 1
+          if-no-files-found: error
 
   e2e-eval:
     # The whole system on an ephemeral kind cluster: index the fixture corpus with the
     # indexer Job, then score eval/fixtures/golden.fixture.yaml through the API and gate.
     needs: [images]
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - run: pip install httpx==0.28.1 pyyaml==6.0.2
-      - uses: helm/kind-action@v1.10.0
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: image-*
+          merge-multiple: true
+      - uses: helm/kind-action@1544676c07bb3570fcb70166beaa07c4528fd4aa # v1.15.1
         with:
           cluster_name: rahbar
-      - name: build and load images
+      - name: load the scanned images into kind
         run: |
-          mkdir -p indexer/corpus indexer/fixtures
-          cp eval/fixtures/*.md indexer/fixtures/ && rm -f indexer/fixtures/README.md
           for c in api indexer ui; do
-            docker build -t rahbar-$c:ci $c
+            gunzip -c image-$c.tar.gz | docker load
             kind load docker-image rahbar-$c:ci --name rahbar
           done
       - name: apply the ci overlay
@@ -129,14 +178,14 @@ jobs:
       - name: eval gate
         run: |
           kubectl -n rahbar port-forward svc/api 8000:80 >/tmp/pf.log 2>&1 &
-          sleep 5
+          for i in $(seq 1 30); do curl -sf http://localhost:8000/readyz >/dev/null && break; sleep 2; done
           python eval/run_eval.py --api http://localhost:8000 \
             --golden eval/fixtures/golden.fixture.yaml \
             --baseline eval/fixtures/baseline.json \
             --out eval-fixture-results.json
       - name: upload results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: eval-fixture-results
           path: eval-fixture-results.json
@@ -144,7 +193,9 @@ jobs:
       - name: diagnostics on failure
         if: failure()
         run: |
-          kubectl -n rahbar get pods,jobs,endpoints -o wide
-          kubectl -n rahbar describe pods | tail -n 80
+          kubectl -n rahbar get pods,jobs,endpoints -o wide || true
+          kubectl -n rahbar get events --sort-by=.lastTimestamp | tail -n 40 || true
+          kubectl -n rahbar describe pods | tail -n 120 || true
           kubectl -n rahbar logs deploy/api --tail=80 || true
-          kubectl -n rahbar logs job/reindex-ci --tail=80 || true
+          kubectl -n rahbar logs statefulset/chroma --tail=40 || true
+          kubectl -n rahbar logs job/reindex-ci --all-containers --tail=80 || true

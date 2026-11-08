@@ -1,0 +1,26 @@
+# Keeps the pins in this repository current, so pinning does not mean "frozen with
+# known CVEs": SHA-pinned actions, digest-pinned base images, and the pip pins.
+# Updates arrive as pull requests into dev, where CI (tests + Trivy) checks them.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: docker
+    directories: ["/api", "/indexer", "/ui"]
+    target-branch: dev
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: pip
+    directories: ["/api", "/indexer"]
+    target-branch: dev
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5

@@ -1,5 +1,6 @@
 # CD: on every push to main. Nothing is published unless the full CI pipeline passed
-# (`needs: [ci]`); images are tagged with the commit SHA, which is also the rollback key.
+# (`needs: [ci]`), and each image is scanned again, as built here, before it is pushed.
+# Images are tagged with the commit SHA, which is also the rollback key.
 #
 # Repository secrets used:
 #   DOCKERHUB_USERNAME, DOCKERHUB_TOKEN   a Docker Hub access token, never a password
@@ -25,37 +26,59 @@ jobs:
   publish:
     needs: [ci]
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     strategy:
+      fail-fast: false
       matrix:
         component: [api, indexer, ui]
+    env:
+      IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/rahbar-${{ matrix.component }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: stage the fixture corpus (the real corpus is never published)
         if: matrix.component == 'indexer'
         run: |
           mkdir -p indexer/corpus indexer/fixtures
           cp eval/fixtures/*.md indexer/fixtures/ && rm -f indexer/fixtures/README.md
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: build (loaded locally, not pushed yet)
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: ${{ matrix.component }}
+          load: true
+          push: false
+          tags: ${{ env.IMAGE }}:${{ github.sha }}
+      - name: trivy gate on the image about to be published
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE }}:${{ github.sha }}
+          scanners: vuln
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
-        with:
-          context: ${{ matrix.component }}
-          push: true
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/rahbar-${{ matrix.component }}:${{ github.sha }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/rahbar-${{ matrix.component }}:main
+      - name: push the scanned image, by commit SHA and as :main
+        run: |
+          docker tag "$IMAGE:$GITHUB_SHA" "$IMAGE:main"
+          docker push "$IMAGE:$GITHUB_SHA"
+          docker push "$IMAGE:main"
 
   deploy:
     needs: [publish]
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     env:
       KUBECONFIG_DATA: ${{ secrets.KUBECONFIG }}
       DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USERNAME }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: skip when no cluster is configured
         if: env.KUBECONFIG_DATA == ''
         run: echo "No KUBECONFIG secret; images are published, deploy skipped."
@@ -63,6 +86,7 @@ jobs:
         if: env.KUBECONFIG_DATA != ''
         run: |
           mkdir -p ~/.kube && printf '%s' "$KUBECONFIG_DATA" > ~/.kube/config
+          chmod 600 ~/.kube/config
           cd k8s/overlays/prod
           for c in api indexer ui; do
             kustomize edit set image "rahbar-$c=docker.io/$DOCKERHUB_USER/rahbar-$c:${GITHUB_SHA}"
