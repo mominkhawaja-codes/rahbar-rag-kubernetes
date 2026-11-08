@@ -32,6 +32,7 @@ spec:
       labels: {app: ui}
     spec:
       automountServiceAccountToken: false
+      enableServiceLinks: false
       securityContext:
         runAsNonRoot: true
         runAsUser: 101

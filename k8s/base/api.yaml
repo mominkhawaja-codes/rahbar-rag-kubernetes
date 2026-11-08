@@ -40,6 +40,7 @@ spec:
         prometheus.io/path: /metrics
     spec:
       automountServiceAccountToken: false
+      enableServiceLinks: false
       terminationGracePeriodSeconds: 40
       securityContext:
         runAsNonRoot: true

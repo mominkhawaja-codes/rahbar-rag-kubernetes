@@ -15,6 +15,7 @@ spec:
       labels: {app: indexer}
     spec:
       automountServiceAccountToken: false
+      enableServiceLinks: false
       restartPolicy: OnFailure
       securityContext:
         runAsNonRoot: true

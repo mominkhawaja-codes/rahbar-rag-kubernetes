@@ -43,6 +43,10 @@ spec:
       labels: {app: chroma}
     spec:
       automountServiceAccountToken: false
+      # Without this, Kubernetes injects CHROMA_PORT=tcp://<ip>:8000 for the "chroma" Service,
+      # and Chroma 1.x reads every CHROMA_* variable as config: it panics ("expected u16 for
+      # key PORT") and crash-loops. Our pods find services by DNS, never by these variables.
+      enableServiceLinks: false
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
