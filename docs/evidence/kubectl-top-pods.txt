@@ -1,0 +1,13 @@
+Captured by the ci workflow's e2e-eval job, run 42496339735 (commit 07b39ad), on an ephemeral kind cluster in GitHub Actions, not on minikube.
+https://github.com/mominkhawaja-codes/rahbar-rag-kubernetes/actions/runs/42496339735
+
+$ kubectl top pods -n rahbar --containers
+POD                      NAME     CPU(cores)   MEMORY(bytes)   
+api-55bb6466c8-2xh44     api      6m           73Mi            
+api-55bb6466c8-7xgn6     api      6m           71Mi            
+api-55bb6466c8-r8g24     api      7m           72Mi            
+chroma-0                 chroma   2m           18Mi            
+ollama-74596b444-ljgdp   ollama   1m           601Mi           
+redis-7c875dbd6b-n6xk2   redis    5m           5Mi             
+ui-575c7dfb7-nx29k       ui       1m           2Mi             
+ui-575c7dfb7-vpn45       ui       1m           2Mi

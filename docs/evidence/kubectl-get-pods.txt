@@ -1,0 +1,14 @@
+Captured by the ci workflow's e2e-eval job, run 42496339735 (commit 07b39ad), on an ephemeral kind cluster in GitHub Actions, not on minikube.
+https://github.com/mominkhawaja-codes/rahbar-rag-kubernetes/actions/runs/42496339735
+
+$ kubectl -n rahbar get pods -o wide
+NAME                     READY   STATUS      RESTARTS   AGE    IP            NODE                   NOMINATED NODE   READINESS GATES
+api-55bb6466c8-2xh44     1/1     Running     0          2m5s   10.244.0.6    rahbar-control-plane   <none>           <none>
+api-55bb6466c8-7xgn6     1/1     Running     0          2m5s   10.244.0.5    rahbar-control-plane   <none>           <none>
+api-55bb6466c8-r8g24     1/1     Running     0          2m5s   10.244.0.7    rahbar-control-plane   <none>           <none>
+chroma-0                 1/1     Running     0          2m5s   10.244.0.13   rahbar-control-plane   <none>           <none>
+ollama-74596b444-ljgdp   1/1     Running     0          2m5s   10.244.0.8    rahbar-control-plane   <none>           <none>
+redis-7c875dbd6b-n6xk2   1/1     Running     0          2m5s   10.244.0.11   rahbar-control-plane   <none>           <none>
+reindex-ci-2kf9z         0/1     Completed   0          78s    10.244.0.14   rahbar-control-plane   <none>           <none>
+ui-575c7dfb7-nx29k       1/1     Running     0          2m5s   10.244.0.9    rahbar-control-plane   <none>           <none>
+ui-575c7dfb7-vpn45       1/1     Running     0          2m5s   10.244.0.12   rahbar-control-plane   <none>           <none>

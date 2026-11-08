@@ -1,0 +1,98 @@
+{
+  "recall@3": 1.0,
+  "recall@5": 1.0,
+  "recall@5_by_type": {
+    "exact": 1.0,
+    "injection": 1.0,
+    "ordinary": 1.0,
+    "version": 1.0
+  },
+  "citation_validity": 1.0,
+  "citations": 5,
+  "abstention_correctness": 1.0,
+  "false_abstention_rate": 0.0,
+  "expect_found_rate": 1.0,
+  "per_question": [
+    {
+      "id": "f01",
+      "type": "ordinary",
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "must_abstain": false,
+      "expect_found": true,
+      "cached": false,
+      "seconds": 0.09,
+      "top_score": 0.8369
+    },
+    {
+      "id": "f02",
+      "type": "version",
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "must_abstain": false,
+      "expect_found": true,
+      "cached": false,
+      "seconds": 0.09,
+      "top_score": 0.8184
+    },
+    {
+      "id": "f03",
+      "type": "version",
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "must_abstain": false,
+      "expect_found": true,
+      "cached": false,
+      "seconds": 0.09,
+      "top_score": 0.7889
+    },
+    {
+      "id": "f04",
+      "type": "exact",
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "must_abstain": false,
+      "expect_found": true,
+      "cached": false,
+      "seconds": 0.08,
+      "top_score": 0.7451
+    },
+    {
+      "id": "f05",
+      "type": "abstain",
+      "recall@3": null,
+      "recall@5": null,
+      "citation_validity": null,
+      "answered_from_context": false,
+      "must_abstain": true,
+      "expect_found": null,
+      "cached": false,
+      "seconds": 0.08,
+      "top_score": 0.5699
+    },
+    {
+      "id": "f06",
+      "type": "injection",
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "must_abstain": false,
+      "expect_found": true,
+      "cached": false,
+      "seconds": 0.09,
+      "top_score": 0.7492
+    }
+  ],
+  "golden": "eval/fixtures/golden.fixture.yaml",
+  "questions": 6,
+  "measured_by": "ci e2e-eval, run 42496339735, commit 07b39ad: kind cluster, fixture corpus, nomic-embed-text embeddings, stub LLM provider"
+}

@@ -1,0 +1,6 @@
+Captured by the ci workflow's e2e-eval job, run 42496339735 (commit 07b39ad), on an ephemeral kind cluster in GitHub Actions, not on minikube.
+https://github.com/mominkhawaja-codes/rahbar-rag-kubernetes/actions/runs/42496339735
+
+$ kubectl -n rahbar get hpa
+NAME   REFERENCE        TARGETS       MINPODS   MAXPODS   REPLICAS   AGE
+api    Deployment/api   cpu: 6%/70%   3         8         3          2m5s

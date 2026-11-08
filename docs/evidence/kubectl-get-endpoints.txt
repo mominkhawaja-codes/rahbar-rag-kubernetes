@@ -1,0 +1,12 @@
+Captured by the ci workflow's e2e-eval job, run 42496339735 (commit 07b39ad), on an ephemeral kind cluster in GitHub Actions, not on minikube.
+https://github.com/mominkhawaja-codes/rahbar-rag-kubernetes/actions/runs/42496339735
+
+$ kubectl -n rahbar get endpoints -o wide
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+NAME              ENDPOINTS                                         AGE
+api               10.244.0.5:8000,10.244.0.6:8000,10.244.0.7:8000   2m5s
+chroma            10.244.0.13:8000                                  2m5s
+chroma-headless   10.244.0.13:8000                                  2m5s
+ollama            10.244.0.8:11434                                  2m5s
+redis             10.244.0.11:6379                                  2m5s
+ui                10.244.0.12:8080,10.244.0.9:8080                  2m5s
