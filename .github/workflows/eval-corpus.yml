@@ -1,0 +1,125 @@
+# Measure the real system on the real corpus, on demand (Actions tab -> eval-corpus ->
+# Run workflow). Produces the numbers committed in eval/results.json, eval/baseline.json
+# and the chunking table in docs/PIPELINE.md.
+#
+# The FAST-NUCES documents are downloaded here with corpus/fetch.py (one request at a
+# time, with pauses) into an indexer image that exists only on this runner. The image is
+# never pushed, and corpus/raw/ is never committed.
+#
+# Steps: index at each chunk setting and measure retrieval (recall@k needs no LLM, so the
+# stub provider answers); then re-index at the shipped setting and run the full golden set
+# with a real model (Ollama in the cluster) for answers, citations and abstention.
+name: eval-corpus
+
+on:
+  # workflow_dispatch only works once this file is on the default branch, so it also
+  # runs when what it measures changes on dev.
+  push:
+    branches: [dev]
+    paths:
+      - .github/workflows/eval-corpus.yml
+      - eval/golden.yaml
+      - indexer/pipeline/**
+  workflow_dispatch:
+    inputs:
+      llm_model:
+        description: Ollama model for the final, full evaluation
+        default: llama3.2:3b
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  eval-corpus:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      LLM_MODEL: ${{ inputs.llm_model || 'llama3.2:3b' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - run: pip install httpx==0.28.1 pyyaml==6.0.2
+      - name: fetch the corpus (politely) and verify it against the committed MANIFEST
+        run: |
+          python corpus/fetch.py
+          python corpus/fetch.py --verify
+      - uses: helm/kind-action@1544676c07bb3570fcb70166beaa07c4528fd4aa # v1.15.1
+        with:
+          cluster_name: rahbar
+      - name: build images (local only) and load them into kind
+        run: |
+          make stage-corpus
+          for c in api indexer ui; do
+            docker build -t rahbar-$c:ci $c
+            kind load docker-image rahbar-$c:ci --name rahbar
+          done
+      - name: bring up the system with the real corpus
+        run: |
+          kubectl apply -k k8s/overlays/ci
+          kubectl -n rahbar patch configmap rahbar-config --type merge \
+            -p '{"data":{"CORPUS_DIR":"/corpus"}}'
+          kubectl -n rahbar rollout status statefulset/chroma --timeout=300s
+          kubectl -n rahbar rollout status deployment/ollama --timeout=300s
+          kubectl -n rahbar rollout status deployment/redis --timeout=180s
+          kubectl -n rahbar exec deploy/ollama -- ollama pull nomic-embed-text
+          kubectl -n rahbar exec deploy/ollama -- ollama pull "${LLM_MODEL}"
+      - name: recall@k at three chunk settings (stub generation)
+        run: |
+          set -e
+          kubectl -n rahbar port-forward svc/api 8000:80 >/tmp/pf.log 2>&1 &
+          for cfg in 400:50 250:40 150:30; do
+            size=${cfg%:*}; overlap=${cfg#*:}
+            kubectl -n rahbar patch configmap rahbar-config --type merge \
+              -p "{\"data\":{\"CHUNK_SIZE\":\"$size\",\"CHUNK_OVERLAP\":\"$overlap\",\"LLM_PROVIDER\":\"stub\"}}"
+            kubectl -n rahbar create job --from=cronjob/reindex "index-$size"
+            kubectl -n rahbar wait --for=condition=complete "job/index-$size" --timeout=2400s
+            kubectl -n rahbar logs "job/index-$size" | grep -E '"(corpus chunked|embedded|indexer finished)"' || true
+            kubectl -n rahbar rollout restart deployment/api
+            kubectl -n rahbar rollout status deployment/api --timeout=300s
+            pkill -f "port-forward svc/api" || true
+            kubectl -n rahbar port-forward svc/api 8000:80 >/tmp/pf.log 2>&1 &
+            for i in $(seq 1 30); do curl -sf http://localhost:8000/readyz >/dev/null && break; sleep 2; done
+            python eval/run_eval.py --api http://localhost:8000 --golden eval/golden.yaml \
+              --baseline /nonexistent --timeout 300 --out "results-chunks-$size-$overlap.json" || true
+          done
+      - name: full evaluation at the shipped setting with a real model
+        run: |
+          kubectl -n rahbar patch configmap rahbar-config --type merge -p \
+            "{\"data\":{\"CHUNK_SIZE\":\"400\",\"CHUNK_OVERLAP\":\"50\",\"LLM_PROVIDER\":\"ollama-incluster\",\"LLM_MODEL\":\"${LLM_MODEL}\",\"LLM_TIMEOUT\":\"300\"}}"
+          kubectl -n rahbar create job --from=cronjob/reindex index-final
+          kubectl -n rahbar wait --for=condition=complete job/index-final --timeout=2400s
+          kubectl -n rahbar rollout restart deployment/api
+          kubectl -n rahbar rollout status deployment/api --timeout=300s
+          pkill -f "port-forward svc/api" || true
+          kubectl -n rahbar port-forward svc/api 8000:80 >/tmp/pf.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://localhost:8000/readyz >/dev/null && break; sleep 2; done
+          python eval/run_eval.py --api http://localhost:8000 --golden eval/golden.yaml \
+            --baseline /nonexistent --timeout 900 --out results-final.json || echo "gate failed; results kept"
+      - name: publish the numbers as annotations
+        if: always()
+        run: |
+          ls results-*.json >/dev/null 2>&1 && python eval/tools/annotate.py results-*.json || true
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: eval-corpus-results
+          path: results-*.json
+          if-no-files-found: warn
+      - name: diagnostics as annotations
+        if: failure()
+        run: |
+          note() {
+            local title="$1"; shift
+            local out; out="$("$@" 2>&1 | tail -n 40)"
+            out="${out//'%'/'%25'}"; out="${out//$'\r'/}"; out="${out//$'\n'/'%0A'}"
+            echo "::warning title=${title}::${out}"
+          }
+          note "pods" kubectl -n rahbar get pods -o wide
+          note "events" sh -c "kubectl -n rahbar get events --sort-by=.lastTimestamp | tail -n 30"
+          note "api logs" kubectl -n rahbar logs deploy/api --tail=30
+          note "indexer logs" sh -c "kubectl -n rahbar logs -l app=indexer --all-containers --tail=40"

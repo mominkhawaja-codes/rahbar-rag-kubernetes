@@ -1,4 +1,4 @@
-# CD: on every push to main. Nothing is published unless the full CI pipeline passed
+# CD: on every push to main (and dev, for SHA-tagged images). Nothing is published unless the full CI pipeline passed
 # (`needs: [ci]`), and each image is scanned again, as built here, before it is pushed.
 # Images are tagged with the commit SHA, which is also the rollback key.
 #
@@ -9,14 +9,14 @@ name: cd
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]   # dev: SHA-tagged images only; :main is pushed from main only
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: cd-main
+  group: cd-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -64,11 +64,67 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: push the scanned image, by commit SHA and as :main
         run: |
-          docker tag "$IMAGE:$GITHUB_SHA" "$IMAGE:main"
           docker push "$IMAGE:$GITHUB_SHA"
-          docker push "$IMAGE:main"
+          if [ "$GITHUB_REF" = "refs/heads/main" ]; then
+            docker tag "$IMAGE:$GITHUB_SHA" "$IMAGE:main"
+            docker push "$IMAGE:main"
+          fi
+
+  deploy-kind:
+    # Deploy the images just published, pulled back from Docker Hub by commit SHA, to an
+    # ephemeral kind cluster, and wait for every rollout: proves the published artifacts
+    # run, not just that they built.
+    needs: [publish]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: helm/kind-action@1544676c07bb3570fcb70166beaa07c4528fd4aa # v1.15.1
+        with:
+          cluster_name: rahbar
+      - name: point the ci overlay at the published images
+        working-directory: k8s/overlays/ci
+        run: |
+          for c in api indexer ui; do
+            kustomize edit set image "rahbar-$c=docker.io/$DOCKERHUB_USER/rahbar-$c:${GITHUB_SHA}"
+          done
+          kubectl kustomize . | grep -E "image: .*rahbar-"
+      - name: deploy and wait for every rollout
+        run: |
+          kubectl apply -k k8s/overlays/ci
+          kubectl -n rahbar rollout status statefulset/chroma --timeout=300s
+          kubectl -n rahbar rollout status deployment/redis --timeout=180s
+          kubectl -n rahbar rollout status deployment/ollama --timeout=300s
+          kubectl -n rahbar exec deploy/ollama -- ollama pull nomic-embed-text
+          kubectl -n rahbar create job --from=cronjob/reindex reindex-cd
+          kubectl -n rahbar wait --for=condition=complete job/reindex-cd --timeout=600s
+          kubectl -n rahbar rollout status deployment/api --timeout=300s
+          kubectl -n rahbar rollout status deployment/ui --timeout=180s
+          kubectl -n rahbar get pods,svc,endpoints,hpa -o wide
+      - name: smoke test through the api Service
+        run: |
+          kubectl -n rahbar port-forward svc/api 8000:80 >/tmp/pf.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://localhost:8000/readyz && break; sleep 2; done
+          curl -sf -X POST http://localhost:8000/api/ask -H 'Content-Type: application/json' \
+            -d '{"question": "When is a student placed on academic warning?"}'
+      - name: diagnostics as annotations
+        if: failure()
+        run: |
+          note() {
+            local title="$1"; shift
+            local out; out="$("$@" 2>&1 | tail -n 40)"
+            out="${out//'%'/'%25'}"; out="${out//$'\r'/}"; out="${out//$'\n'/'%0A'}"
+            echo "::warning title=${title}::${out}"
+          }
+          note "pods" kubectl -n rahbar get pods -o wide
+          note "events" sh -c "kubectl -n rahbar get events --sort-by=.lastTimestamp | tail -n 30"
 
   deploy:
+    # A real cluster, only when a KUBECONFIG secret exists (skipped otherwise).
     needs: [publish]
     runs-on: ubuntu-24.04
     timeout-minutes: 15

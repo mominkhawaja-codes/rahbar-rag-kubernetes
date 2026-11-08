@@ -183,6 +183,30 @@ jobs:
             --golden eval/fixtures/golden.fixture.yaml \
             --baseline eval/fixtures/baseline.json \
             --out eval-fixture-results.json
+      - name: capture cluster evidence (endpoints, hpa, top) as annotations
+        run: |
+          kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.7.2/components.yaml
+          kubectl -n kube-system patch deployment metrics-server --type json \
+            -p '[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]'
+          kubectl -n kube-system rollout status deployment/metrics-server --timeout=180s
+          for i in $(seq 1 24); do kubectl top pods -n rahbar >/dev/null 2>&1 && break; sleep 5; done
+          sleep 30   # let the HPA read at least one metrics sample
+          note() {
+            local title="$1"; shift
+            local out; out="$(echo "\$ $*"; "$@" 2>&1 | tail -n 40)"
+            out="${out//'%'/'%25'}"; out="${out//$'\r'/}"; out="${out//$'\n'/'%0A'}"
+            echo "::notice title=${title}::${out}"
+          }
+          note "evidence: kubectl get endpoints" kubectl -n rahbar get endpoints -o wide
+          note "evidence: kubectl get hpa" kubectl -n rahbar get hpa
+          note "evidence: kubectl top pods" kubectl top pods -n rahbar --containers
+          note "evidence: kubectl get pods" kubectl -n rahbar get pods -o wide
+      - name: publish the fixture results as an annotation
+        if: always()
+        run: |
+          if [ -f eval-fixture-results.json ]; then
+            python eval/tools/annotate.py eval-fixture-results.json
+          fi
       - name: upload results
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
