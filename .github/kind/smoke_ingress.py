@@ -24,14 +24,24 @@ def request(path: str, host: str | None = HOST, body: dict | None = None,
         req.add_header(k, v)
     try:
         with urllib.request.urlopen(req, timeout=60) as r:
-            return r.status, dict(r.headers), r.read()
+            out = (r.status, dict(r.headers), r.read())
     except urllib.error.HTTPError as e:
-        return e.code, dict(e.headers), e.read()
+        out = (e.code, dict(e.headers), e.read())
+    except OSError as e:                     # connection refused, timeout, ...
+        out = (0, {}, repr(e).encode())
+    LAST.update(status=out[0], body=out[2])
+    return out
+
+
+LAST: dict = {}
 
 
 def check(cond: bool, message: str) -> None:
     print(("ok   " if cond else "FAIL ") + message)
     if not cond:
+        # an annotation is readable from the public API, unlike the job log
+        detail = f"{message} | last response: {LAST.get('status')} {LAST.get('body', b'')[:300]!r}"
+        print("::error title=ingress smoke test::" + " ".join(detail.replace("%", "%25").split()))
         sys.exit(1)
 
 
