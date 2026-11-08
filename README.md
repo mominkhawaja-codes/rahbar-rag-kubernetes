@@ -145,6 +145,8 @@ docs/       CORPUS, PIPELINE, FAILURE-ANALYSIS, ENGINEERING-NOTES, AI-USAGE, adr
 .github/    ci.yml (lint, tests, kubeconform, Trivy, kind e2e eval gate), cd.yml (Docker Hub, deploy)
 ```
 
+How the objects fit together, why Chroma is a StatefulSet and how the embedding pin is enforced: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
 Design decisions are in `docs/adr/`: [0001 indexer as a Job](docs/adr/0001-indexer-as-job.md),
 [0002 chunking](docs/adr/0002-chunking.md), [0003 cache store](docs/adr/0003-semantic-cache-store.md),
 [0004 LLM provider and PII](docs/adr/0004-llm-provider-and-pii.md).
