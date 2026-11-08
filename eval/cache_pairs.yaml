@@ -1,0 +1,97 @@
+# Semantic-cache threshold experiment (ADR 0003): a question already in the cache, and
+# a new question. same_answer says whether serving the cached answer to the new question
+# would be correct. A cache hit on a same_answer: false pair is a FALSE HIT.
+#
+# Written from the real corpus (FAST-NUCES 2026 handbook, fee and grading pages) before
+# measuring anything. Kinds: exact, paraphrase, near_miss (sounds alike, answer differs),
+# version (current vs superseded rules), abstain (topic the corpus lacks), followup
+# (depends on an earlier turn: must never reach the cache at all).
+
+pairs:
+  # --- exact repeats: always the same answer
+  - {id: e1, kind: exact, same_answer: true,
+     cached: "What CGPA do I need to avoid academic warning?",
+     probe: "What CGPA do I need to avoid academic warning?"}
+  - {id: e2, kind: exact, same_answer: true,
+     cached: "What CGPA do I need to avoid academic warning?",
+     probe: "what cgpa do i need to avoid academic warning"}
+
+  # --- paraphrases: same intended answer
+  - {id: p1, kind: paraphrase, same_answer: true,
+     cached: "What CGPA do I need to avoid academic warning?",
+     probe: "What is the minimum CGPA to stay off academic warning?"}
+  - {id: p2, kind: paraphrase, same_answer: true,
+     cached: "How much absence can the Head of Department condone?",
+     probe: "What percentage of absences can the HoD excuse?"}
+  - {id: p3, kind: paraphrase, same_answer: true,
+     cached: "What is the tuition fee per credit hour for BS students?",
+     probe: "How much does one credit hour cost for a BS student?"}
+  - {id: p4, kind: paraphrase, same_answer: true,
+     cached: "How long is the summer semester?",
+     probe: "How many weeks does the summer semester last?"}
+  - {id: p5, kind: paraphrase, same_answer: true,
+     cached: "What SGPA is needed for the Dean's List of Honors?",
+     probe: "Which SGPA range puts a student on the Dean's List?"}
+  - {id: p6, kind: paraphrase, same_answer: true,
+     cached: "Is the security deposit refundable?",
+     probe: "Do I get my security deposit back?"}
+  - {id: p7, kind: paraphrase, same_answer: true,
+     cached: "For how many semesters can I freeze my admission?",
+     probe: "What is the maximum number of semesters I can freeze?"}
+  - {id: p8, kind: paraphrase, same_answer: true,
+     cached: "Until when can I drop a course in a regular semester?",
+     probe: "What is the deadline for dropping a course during a regular semester?"}
+
+  # --- near misses: sound alike, need a different answer
+  - {id: n1, kind: near_miss, same_answer: false,
+     cached: "What is the tuition fee per credit hour for BS students?",
+     probe: "What is the admission fee for BS students?"}
+  - {id: n2, kind: near_miss, same_answer: false,
+     cached: "What SGPA is needed for the Dean's List of Honors?",
+     probe: "What SGPA is needed for the Rector's List of Honors?"}
+  - {id: n3, kind: near_miss, same_answer: false,
+     cached: "Until when can I drop a course in a regular semester?",
+     probe: "Until when can I withdraw from a course in a regular semester?"}
+  - {id: n4, kind: near_miss, same_answer: false,
+     cached: "Is the security deposit refundable?",
+     probe: "Is the admission fee refundable?"}
+  - {id: n5, kind: near_miss, same_answer: false,
+     cached: "What CGPA do I need to avoid academic warning?",
+     probe: "After how many semesters below the minimum CGPA is admission closed?"}
+  - {id: n6, kind: near_miss, same_answer: false,
+     cached: "How many grade points is a B+ worth?",
+     probe: "How many grade points is a B- worth?"}
+  - {id: n7, kind: near_miss, same_answer: false,
+     cached: "What is the fee for an additional transcript?",
+     probe: "What is the campus transfer fee?"}
+  - {id: n8, kind: near_miss, same_answer: false,
+     cached: "Can I drop a course in the summer semester?",
+     probe: "Can I drop a course in the first semester?"}
+
+  # --- versions: the current rule vs the superseded 2023 rule
+  - {id: v1, kind: version, same_answer: false,
+     cached: "What is the minimum attendance requirement under the current rules?",
+     probe: "What was the minimum attendance requirement in the 2023 rules?"}
+  - {id: v2, kind: version, same_answer: false,
+     cached: "Can I repeat a course to improve my CGPA under the 2026 rules?",
+     probe: "Could students repeat a course to improve their CGPA under the old 2023 rules?"}
+
+  # --- must abstain: the corpus has no hostel rules or fees
+  - {id: a1, kind: abstain, same_answer: false,
+     cached: "What is the tuition fee per credit hour for BS students?",
+     probe: "What is the hostel fee per semester?"}
+  - {id: a2, kind: abstain, same_answer: false,
+     cached: "Is the security deposit refundable?",
+     probe: "Is the hostel security deposit refundable?"}
+  - {id: a3, kind: abstain, same_answer: false,
+     cached: "How long is the summer semester?",
+     probe: "What are the hostel curfew timings?"}
+
+  # --- follow-ups: never cached and never looked up (is_followup); listed so the
+  #     experiment asserts that, not to measure a similarity
+  - {id: f1, kind: followup, same_answer: false,
+     cached: "What is the tuition fee per credit hour for BS students?",
+     probe: "And what about MS students?"}
+  - {id: f2, kind: followup, same_answer: false,
+     cached: "How long is the summer semester?",
+     probe: "What about the winter break?"}
