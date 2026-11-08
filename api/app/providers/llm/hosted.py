@@ -20,6 +20,7 @@ import httpx
 from ...config import Settings
 from ...schemas import Answer, Passage
 from .prompt import answer_schema, generate_with_retry
+from .usage import record_usage
 
 
 class HostedProviderError(RuntimeError):
@@ -56,7 +57,11 @@ class HostedProvider:
         if response.status_code >= 400:
             # never include the request (it carries the key) in the error
             raise HostedProviderError(f"hosted LLM returned HTTP {response.status_code}")
-        return str(response.json()["choices"][0]["message"]["content"])
+        body = response.json()
+        usage = body.get("usage") or {}
+        record_usage(self.name, self.settings.llm_model,
+                     usage.get("prompt_tokens"), usage.get("completion_tokens"))
+        return str(body["choices"][0]["message"]["content"])
 
     def generate(self, question: str, passages: list[Passage]) -> Answer:
         return generate_with_retry(self._call, question, passages)

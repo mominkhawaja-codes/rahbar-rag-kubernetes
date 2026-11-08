@@ -12,6 +12,7 @@ import httpx
 from ...config import Settings
 from ...schemas import Answer, Passage
 from .prompt import answer_schema, generate_with_retry
+from .usage import record_usage
 
 
 class OllamaProvider:
@@ -32,7 +33,10 @@ class OllamaProvider:
         }
         response = httpx.post(self.url, json=payload, timeout=self.settings.llm_timeout)
         response.raise_for_status()
-        return str(response.json()["message"]["content"])
+        body = response.json()
+        record_usage(self.name, self.settings.llm_model,
+                     body.get("prompt_eval_count"), body.get("eval_count"))
+        return str(body["message"]["content"])
 
     def generate(self, question: str, passages: list[Passage]) -> Answer:
         return generate_with_retry(self._call, question, passages)

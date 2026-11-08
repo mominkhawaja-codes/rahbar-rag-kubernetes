@@ -27,6 +27,7 @@ from ..errors import DependencyUnavailable
 from ..logjson import request_id_var
 from ..providers.llm.base import LLMProvider
 from ..providers.llm.prompt import PROMPT_VERSION
+from ..providers.llm.usage import TokenUsage, usage_var
 from ..retrieval.base import Retriever
 from ..routes import metrics
 from ..schemas import Answer, AskResponse, Passage, RetrievedRef
@@ -82,6 +83,19 @@ def answer_question(
     question: str, retriever: Retriever, provider: LLMProvider, settings: Settings,
     cache: SemanticCache | None = None, embedder: Embedder | None = None,
 ) -> AskResponse:
+    # Token usage for this request only: providers add to it on every LLM call.
+    usage = TokenUsage()
+    token = usage_var.set(usage)
+    try:
+        return _answer_question(question, retriever, provider, settings, cache, embedder, usage)
+    finally:
+        usage_var.reset(token)
+
+
+def _answer_question(
+    question: str, retriever: Retriever, provider: LLMProvider, settings: Settings,
+    cache: SemanticCache | None, embedder: Embedder | None, usage: TokenUsage,
+) -> AskResponse:
     rid = request_id_var.get()
     cache = cache or NullCache()
     embedder = embedder or HashEmbedder()
@@ -102,7 +116,8 @@ def answer_question(
             hit = None
         if hit is not None:
             metrics.CACHE.labels(result="hit").inc()
-            log.info("answered", extra={"cache": "hit", "similarity": hit.similarity})
+            log.info("answered", extra={"cache": "hit", "similarity": hit.similarity,
+                                        **usage.log_fields()})
             return hit.response.model_copy(update={"request_id": rid, "cached": True})
         metrics.CACHE.labels(result="miss").inc()
 
@@ -128,6 +143,10 @@ def answer_question(
         # 4-6. generate, fall back, check citations
         answer, fallback_reason = _generate(question, grounded, provider)
         declined = fallback_reason
+        if usage.input_reported:
+            metrics.TOKENS_PER_REQUEST.labels(direction="input").observe(usage.input_tokens)
+        if usage.output_reported:
+            metrics.TOKENS_PER_REQUEST.labels(direction="output").observe(usage.output_tokens)
         if fallback_reason is None:
             answer, declined = _ground(answer, grounded)
 
@@ -167,6 +186,7 @@ def answer_question(
             "answered_from_context": response.answered_from_context,
             "declined": declined,
             "citations": len(response.citations),
+            **usage.log_fields(),
         },
     )
     return response

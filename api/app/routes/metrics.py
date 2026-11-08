@@ -32,6 +32,16 @@ ABSTENTIONS = Counter("rahbar_abstentions_total", "Declined answers", ["reason"]
 FALLBACKS = Counter("rahbar_fallbacks_total", "Generation failures answered safely", ["reason"])
 CITATIONS_DROPPED = Counter("rahbar_citations_dropped_total",
                             "Citations that matched no retrieved passage")
+# Tokens as reported by the provider, per LLM call (retries included). Labels stay
+# low-cardinality: provider and model come from the ConfigMap, direction is input|output.
+LLM_TOKENS = Counter("rahbar_llm_tokens_total", "LLM tokens reported by the provider",
+                     ["provider", "model", "direction"])
+LLM_USAGE_MISSING = Counter("rahbar_llm_usage_missing_total",
+                            "LLM calls whose reply did not report token usage",
+                            ["provider", "model"])
+TOKENS_PER_REQUEST = Histogram(
+    "rahbar_llm_tokens_per_request", "Reported LLM tokens per answered request",
+    ["direction"], buckets=(100, 250, 500, 1000, 2000, 4000, 8000, 16000))
 
 
 @router.get("/metrics")
