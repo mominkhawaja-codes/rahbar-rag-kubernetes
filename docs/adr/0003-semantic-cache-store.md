@@ -10,8 +10,11 @@ one process would hit for roughly a third of repeats at best, and would be lost 
 rollout. A cached answer must also never outlive the index it was built from.
 
 ## Decision
-- **Store:** one Redis Deployment (`k8s/base/redis.yaml`), no persistence, `maxmemory
-  200mb` with LRU eviction, ClusterIP only. All replicas share it.
+- **Store:** one Redis Deployment (`k8s/base/redis.yaml`) with a 1 Gi PVC `cache-data`
+  and append-only-file persistence (fsync every second), `maxmemory 200mb` with LRU
+  eviction, ClusterIP only. All API replicas share it, and a restarted Redis pod keeps
+  its entries. `strategy: Recreate`, because the ReadWriteOnce volume can be mounted by
+  one pod at a time.
 - **Match:** an exact normalised question match by key first, then cosine similarity of
   question embeddings ≥ `CACHE_THRESHOLD` (0.95), scanning at most the newest
   `CACHE_MAX_ENTRIES` entries of the current generation (`api/app/services/cache.py`).

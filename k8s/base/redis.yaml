@@ -1,5 +1,18 @@
-# The semantic cache store (ADR 0003). A cache, not a database: no persistence, and
-# losing it costs only cold answers. ClusterIP only.
+# The semantic cache store (ADR 0003), with persistence: the append-only file lives on
+# the cache-data PVC, so a restarted or rescheduled Redis pod comes back with its cached
+# answers instead of starting cold. ClusterIP only.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cache-data
+  namespace: rahbar
+  labels: {app: redis}
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -22,6 +35,10 @@ metadata:
   labels: {app: redis}
 spec:
   replicas: 1
+  # ReadWriteOnce: only one pod can mount cache-data at a time. A rolling update would
+  # start the new pod while the old one still holds the volume, and it would wait forever.
+  strategy:
+    type: Recreate
   selector:
     matchLabels: {app: redis}
   template:
@@ -34,6 +51,7 @@ spec:
         runAsNonRoot: true
         runAsUser: 999
         runAsGroup: 999
+        fsGroup: 999              # the volume is writable by the redis user
         seccompProfile: {type: RuntimeDefault}
       containers:
         - name: redis
@@ -41,8 +59,10 @@ spec:
           # HIGH/CRITICAL findings in 7.4.2). Same commands for our client (redis-py 5.2).
           image: redis:8.8.4-alpine3.23@sha256:c027ae0f677dcf73d74038256f5b88c9ba7b11ccbfae97e96a9f091208d36125
           imagePullPolicy: IfNotPresent
-          args: ["--save", "", "--appendonly", "no", "--maxmemory", "200mb",
-                 "--maxmemory-policy", "allkeys-lru"]
+          # AOF with an fsync every second: at most one second of cache writes is lost on
+          # a crash. RDB snapshots stay off; the AOF is the single persistence format.
+          args: ["--dir", "/data", "--appendonly", "yes", "--appendfsync", "everysec",
+                 "--save", "", "--maxmemory", "200mb", "--maxmemory-policy", "allkeys-lru"]
           ports:
             - containerPort: 6379
           readinessProbe:
@@ -69,4 +89,5 @@ spec:
               mountPath: /data
       volumes:
         - name: data
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: cache-data
