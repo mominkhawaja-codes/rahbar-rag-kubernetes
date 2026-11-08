@@ -36,7 +36,9 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       containers:
         - name: redis
-          image: redis:7.4.2-alpine
+          # 8.8 on Alpine 3.23: 7.4.x only ships on end-of-life Alpine 3.21 (84 fixable
+          # HIGH/CRITICAL findings in 7.4.2). Same commands for our client (redis-py 5.2).
+          image: redis:8.8.4-alpine3.23@sha256:c027ae0f677dcf73d74038256f5b88c9ba7b11ccbfae97e96a9f091208d36125
           imagePullPolicy: IfNotPresent
           args: ["--save", "", "--appendonly", "no", "--maxmemory", "200mb",
                  "--maxmemory-policy", "allkeys-lru"]
