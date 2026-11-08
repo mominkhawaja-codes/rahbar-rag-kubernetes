@@ -57,10 +57,10 @@ jobs:
             api/requirements*.txt
             indexer/requirements*.txt
       - run: pip install -r api/requirements-dev.txt -r indexer/requirements-dev.txt
-      - name: pytest (stubs only, no network, no model)
+      - name: pytest with coverage (stubs only, no network, no model; fails below 60%)
         run: |
-          (cd api && pytest -q)
-          (cd indexer && pytest -q)
+          (cd api && pytest -q --cov=app --cov-report=term-missing --cov-fail-under=60)
+          (cd indexer && pytest -q --cov=pipeline --cov-report=term-missing --cov-fail-under=60)
           pytest -q eval/tests
       - name: submission checker (reported, not gated)
         run: python scripts/check_submission.py || true

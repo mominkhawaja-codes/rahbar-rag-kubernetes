@@ -24,8 +24,8 @@ install: ## create .venv and install the api, indexer and tool dependencies
 	$(BIN)/pip install -q -r api/requirements-dev.txt -r indexer/requirements-dev.txt
 
 test: ## run the api and indexer tests (stubs only: no cluster, no model, no network)
-	cd api && $(BIN)/pytest -q
-	cd indexer && $(BIN)/pytest -q
+	cd api && $(BIN)/pytest -q --cov=app --cov-report=term-missing --cov-fail-under=60
+	cd indexer && $(BIN)/pytest -q --cov=pipeline --cov-report=term-missing --cov-fail-under=60
 	$(BIN)/pytest -q eval/tests
 
 lint: ## ruff and mypy over everything in Python

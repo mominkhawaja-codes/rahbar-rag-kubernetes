@@ -29,3 +29,8 @@ indexer/corpus/*
 !indexer/corpus/.gitkeep
 indexer/fixtures/*
 !indexer/fixtures/.gitkeep
+
+# coverage data from pytest --cov
+.coverage
+.coverage.*
+htmlcov/
