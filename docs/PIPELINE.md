@@ -128,15 +128,20 @@ words, headings excluded since they are stored as metadata) is **1.021** at that
 
 | Size (tokens) | Overlap (tokens) | recall@5 | Chunks stored | Amplification |
 | --- | --- | --- | --- | --- |
-| 400 | 50 | not measured yet | 588 | 1.021 |
-| 250 | 40 | not measured yet | 632 | 1.047 |
-| 150 | 30 | not measured yet | 760 | 1.100 |
+| **400** | **50** | **0.941** | 612 | 1.028 |
+| 250 | 40 | 0.941 | 671 | 1.058 |
+| 150 | 30 | 0.941 | 830 | 1.115 |
 
-*Measured:* chunk counts and amplification over the text-layer pages (240 pages,
-57,388 words), with OCR switched off because Tesseract is not installed locally, so the
-two scanned documents add more chunks in the cluster. recall@5 needs the real embedding
-model and Chroma: run `make eval` once per row (set `CHUNK_SIZE`/`CHUNK_OVERLAP` in the
-ConfigMap, then `make index`) and fill the column with the numbers it prints.
+*Measured* by the `eval-corpus` workflow, run
+[42498760820](https://github.com/mominkhawaja-codes/rahbar-rag-kubernetes/actions/runs/42498760820)
+(commit 5fd631a): the real corpus indexed in a kind cluster with OCR (275 pages, 35 of them
+OCR'd, 64,273 source words), `nomic-embed-text`, and the 19-question `eval/golden.yaml`.
+Recall is identical at all three sizes: 16 of the 17 answerable questions find their clause
+in the top 5, and the same one misses each time (q02, "What does clause 1.21 require?"; the
+clause number alone is a weak signal for a dense embedding). Smaller chunks cost 10% and 37%
+more vectors for no recall gain on this golden set, so **400/50 is kept**. With every
+setting at the same recall, the golden set cannot separate them; a harder set, with questions
+whose answers span two clauses, is what would.
 
 Amplification stays low even with overlap because most clauses are far shorter than a
 chunk: overlap is only added between chunks *inside one section*, and most sections fit

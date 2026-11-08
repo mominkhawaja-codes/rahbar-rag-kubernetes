@@ -84,19 +84,29 @@ live index is untouched, because the swap only happens at the end (ADR 0001). Ch
 
 ## 5. recall@5 by question type: where is it worst, and why?
 
-**Not measured yet**: it needs Chroma, the embedding model and the real index. Run
-`make eval` and read `recall@5_by_type` in `eval/results.json` (types: ordinary, exact,
-version, table, injection). Our prediction, to be confirmed or refuted by those numbers:
+Measured on the real corpus (`eval/results.json`, eval-corpus run 42498760820, 400/50):
 
-- **table** (q16, B+ grade points) is likely the weakest. A pipe table embeds poorly next
-  to prose, and the same grade table appears in the handbook, the prospectus and the
-  grading page, so the top 5 may hold the other two copies instead of the handbook's
-  clause 2.3.
-- **exact** questions that quote a clause number ("clause 1.21") depend on the number
-  being in the embedded text. It is: the section label `[1.21-1.22]` goes into
-  `embedding_text`, `indexer/pipeline/embed.py`. But dense embeddings match numbers weakly.
+| Type | recall@5 |
+| --- | --- |
+| ordinary (10) | 1.00 |
+| version (2) | 1.00 |
+| table (1) | 1.00 |
+| injection (1) | 1.00 |
+| **exact (3)** | **0.67** |
 
-Write the measured table and the actual worst type here.
+**Worst: exact.** The miss is q02, "What does clause 1.21 of the academic rules require?",
+at every chunk size. The question names the clause only by its number, while the passage
+talks about attendance, and a dense embedding barely represents "1.21". (Which passages
+it retrieved instead was not recorded by this run.) The number is in the
+embedded text (the section label `[1.21-1.22]` goes into `embedding_text`,
+`indexer/pipeline/embed.py`), but one token among hundreds does not move the vector. The
+other two exact questions (q11 tuition per credit hour, q12 security deposit) succeed,
+because they name the thing as well as the number. The fix would be hybrid retrieval: a
+keyword or metadata match on clause numbers (a `where_document` / `$contains` filter in
+Chroma) alongside the vector search.
+
+Our first prediction, that the table question would be weakest, was wrong: q16 (B+ grade
+points) found handbook clause 2.3 in every configuration.
 
 ## 6. EMBED_MODEL changed on the API only: what does your system do?
 
