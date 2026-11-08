@@ -13,7 +13,7 @@ INGRESS_IP ?= $(shell minikube ip 2>/dev/null)
 HOST ?= rahbar.local
 
 .DEFAULT_GOAL := help
-.PHONY: help install test lint dev cluster images apply secret index ask fetch eval eval-fixtures check
+.PHONY: help install test lint dev cluster stage-corpus images apply secret index ask fetch eval eval-fixtures check dry-run
 
 help: ## list the targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-14s %s\n", $$1, $$2}'
@@ -26,6 +26,7 @@ install: ## create .venv and install the api, indexer and tool dependencies
 test: ## run the api and indexer tests (stubs only: no cluster, no model, no network)
 	cd api && $(BIN)/pytest -q
 	cd indexer && $(BIN)/pytest -q
+	$(BIN)/pytest -q eval/tests
 
 lint: ## ruff and mypy over everything in Python
 	$(BIN)/ruff check api indexer eval corpus
@@ -40,7 +41,16 @@ cluster: ## start minikube with Calico, then enable metrics-server and ingress
 	minikube addons enable metrics-server
 	minikube addons enable ingress
 
-images: ## build the three images and load them into minikube (needs yours: Dockerfiles)
+stage-corpus: ## copy corpus/raw and eval/fixtures into the indexer's build context
+	mkdir -p indexer/corpus indexer/fixtures
+	find indexer/corpus indexer/fixtures -mindepth 1 ! -name .gitkeep -delete
+	if [ -d corpus/raw ]; then cp corpus/raw/* indexer/corpus/; fi
+	cp eval/fixtures/*.md indexer/fixtures/ && rm -f indexer/fixtures/README.md
+
+dry-run: ## extract, clean and chunk the real corpus locally; prints statistics, writes nothing
+	cd indexer && CORPUS_DIR=../corpus/raw $(BIN)/python -m pipeline.run --dry-run
+
+images: stage-corpus ## build the three images and load them into minikube
 	docker build -t rahbar-api:$(TAG) api
 	docker build -t rahbar-indexer:$(TAG) indexer
 	docker build -t rahbar-ui:$(TAG) ui
@@ -48,7 +58,7 @@ images: ## build the three images and load them into minikube (needs yours: Dock
 	minikube image load rahbar-indexer:$(TAG)
 	minikube image load rahbar-ui:$(TAG)
 
-apply: ## apply the dev overlay (needs yours: manifests)
+apply: ## apply the dev overlay
 	kubectl apply -k k8s/overlays/dev
 
 secret: ## create the LLM key Secret from the LLM_API_KEY variable; never from a file
@@ -56,7 +66,7 @@ secret: ## create the LLM key Secret from the LLM_API_KEY variable; never from a
 	kubectl create secret generic rahbar-secret -n $(NS) \
 	  --from-literal=LLM_API_KEY="$$LLM_API_KEY" --dry-run=client -o yaml | kubectl apply -f -
 
-index: ## run the indexer once, from the CronJob's template (needs yours: CronJob reindex)
+index: ## run the indexer once, from the CronJob's template
 	kubectl create job --from=cronjob/reindex reindex-$$(date +%s) -n $(NS)
 	@echo "watch it with: kubectl get jobs -n $(NS) -w"
 

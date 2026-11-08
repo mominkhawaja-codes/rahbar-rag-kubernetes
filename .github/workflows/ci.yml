@@ -1,0 +1,150 @@
+# CI: every push and pull request to dev and main, and called by cd.yml before publishing.
+# Order: lint + unit tests + manifest validation -> image build and scan -> e2e eval gate.
+name: ci
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [dev, main]
+  workflow_call:
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - run: pip install -r api/requirements-dev.txt -r indexer/requirements-dev.txt
+      - name: ruff
+        run: ruff check api indexer eval corpus
+      - name: mypy
+        run: |
+          (cd api && mypy app)
+          (cd indexer && mypy pipeline)
+
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - run: pip install -r api/requirements-dev.txt -r indexer/requirements-dev.txt
+      - name: pytest (stubs only, no network, no model)
+        run: |
+          (cd api && pytest -q)
+          (cd indexer && pytest -q)
+          pytest -q eval/tests
+      - name: submission checker (reported, not gated)
+        run: python scripts/check_submission.py || true
+
+  manifests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: install kubeconform
+        run: |
+          curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz \
+            | sudo tar xz -C /usr/local/bin kubeconform
+      - name: kubeconform every overlay
+        run: |
+          for overlay in dev prod ci; do
+            echo "== $overlay"
+            kubectl kustomize "k8s/overlays/$overlay" \
+              | kubeconform -strict -summary -kubernetes-version 1.30.0 -
+          done
+
+  images:
+    needs: [lint, test, manifests]
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        component: [api, indexer, ui]
+    steps:
+      - uses: actions/checkout@v4
+      - name: stage the fixture corpus into the indexer build context
+        if: matrix.component == 'indexer'
+        run: |
+          mkdir -p indexer/corpus indexer/fixtures
+          cp eval/fixtures/*.md indexer/fixtures/ && rm -f indexer/fixtures/README.md
+      - name: build
+        run: docker build -t rahbar-${{ matrix.component }}:${{ github.sha }} ${{ matrix.component }}
+      - name: trivy scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: rahbar-${{ matrix.component }}:${{ github.sha }}
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+
+  e2e-eval:
+    # The whole system on an ephemeral kind cluster: index the fixture corpus with the
+    # indexer Job, then score eval/fixtures/golden.fixture.yaml through the API and gate.
+    needs: [images]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install httpx==0.28.1 pyyaml==6.0.2
+      - uses: helm/kind-action@v1.10.0
+        with:
+          cluster_name: rahbar
+      - name: build and load images
+        run: |
+          mkdir -p indexer/corpus indexer/fixtures
+          cp eval/fixtures/*.md indexer/fixtures/ && rm -f indexer/fixtures/README.md
+          for c in api indexer ui; do
+            docker build -t rahbar-$c:ci $c
+            kind load docker-image rahbar-$c:ci --name rahbar
+          done
+      - name: apply the ci overlay
+        run: |
+          kubectl apply -k k8s/overlays/ci
+          kubectl -n rahbar rollout status statefulset/chroma --timeout=300s
+          kubectl -n rahbar rollout status deployment/ollama --timeout=300s
+          kubectl -n rahbar rollout status deployment/redis --timeout=180s
+      - name: pull the embedding model
+        run: kubectl -n rahbar exec deploy/ollama -- ollama pull nomic-embed-text
+      - name: run the indexer Job on the fixture corpus
+        run: |
+          kubectl -n rahbar create job --from=cronjob/reindex reindex-ci
+          kubectl -n rahbar wait --for=condition=complete job/reindex-ci --timeout=600s
+          kubectl -n rahbar logs job/reindex-ci --tail=20
+      - name: wait for the api to become ready
+        run: kubectl -n rahbar rollout status deployment/api --timeout=300s
+      - name: eval gate
+        run: |
+          kubectl -n rahbar port-forward svc/api 8000:80 >/tmp/pf.log 2>&1 &
+          sleep 5
+          python eval/run_eval.py --api http://localhost:8000 \
+            --golden eval/fixtures/golden.fixture.yaml \
+            --baseline eval/fixtures/baseline.json \
+            --out eval-fixture-results.json
+      - name: upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-fixture-results
+          path: eval-fixture-results.json
+          if-no-files-found: ignore
+      - name: diagnostics on failure
+        if: failure()
+        run: |
+          kubectl -n rahbar get pods,jobs,endpoints -o wide
+          kubectl -n rahbar describe pods | tail -n 80
+          kubectl -n rahbar logs deploy/api --tail=80 || true
+          kubectl -n rahbar logs job/reindex-ci --tail=80 || true

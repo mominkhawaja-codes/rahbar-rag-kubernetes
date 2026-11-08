@@ -14,13 +14,18 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from .config import get_settings
+from .embeddings import get_embedder
+from .errors import DependencyUnavailable
 from .logjson import configure_logging, request_id_var
 from .providers.llm import get_provider
 from .retrieval import get_retriever
 from .routes import ask, health, metrics
+from .routes.health import run_checks
+from .services.cache import get_cache
 
 log = logging.getLogger("rahbar.api")
 
@@ -30,20 +35,42 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
     configure_logging(settings.log_level)
     app.state.settings = settings
-    app.state.retriever = get_retriever(settings)
+    app.state.embedder = get_embedder(settings)
+    app.state.retriever = get_retriever(settings, embedder=app.state.embedder)
     app.state.provider = get_provider(settings)
-    # STARTER-TODO(4.4): compare the collection's embedding-model metadata with
-    # settings.embed_model here, and make /readyz fail on a mismatch.
-    # This process only reads the index. The indexer Job writes it.
+    app.state.cache = get_cache(settings)
+    # The embedding pin (4.4): log a mismatch loudly at start-up. /readyz repeats the
+    # check on every probe and keeps the pod out of the Service until it is fixed.
+    # This process only reads the index; the indexer Job writes it.
+    pin = run_checks(app.state).get("embed_pin")
+    if pin is not None and not pin.get("ok"):
+        log.error("embedding pin check failed", extra={"error": pin.get("error")})
     log.info(
         "api started",
         extra={"retriever": settings.retriever, "llm_provider": settings.llm_provider,
-               "embed_model": settings.embed_model, "top_k": settings.top_k},
+               "embed_model": settings.embed_model, "top_k": settings.top_k,
+               "cache": app.state.cache.name, "relevance_floor": settings.relevance_floor},
     )
     yield
 
 
+async def dependency_unavailable(request: Request, exc: Exception) -> JSONResponse:
+    dep = getattr(exc, "dependency", "dependency")
+    log.error("dependency unavailable", extra={"dependency": dep, "error": str(exc)[:300]})
+    return JSONResponse(status_code=503, content={
+        "detail": f"{dep} unavailable; please try again shortly",
+        "request_id": request_id_var.get()})
+
+
+async def unhandled(request: Request, exc: Exception) -> JSONResponse:
+    log.exception("unhandled error")
+    return JSONResponse(status_code=500, content={
+        "detail": "internal error", "request_id": request_id_var.get()})
+
+
 app = FastAPI(title="RAHBAR API", lifespan=lifespan)
+app.add_exception_handler(DependencyUnavailable, dependency_unavailable)
+app.add_exception_handler(Exception, unhandled)
 
 
 @app.middleware("http")

@@ -1,0 +1,15 @@
+# minikube: images built locally and loaded with `make images` (tag dev); the LLM and
+# embeddings come from Ollama on the laptop (OLLAMA_HOST=0.0.0.0 ollama serve).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+images:
+  - {name: rahbar-api, newTag: dev}
+  - {name: rahbar-indexer, newTag: dev}
+  - {name: rahbar-ui, newTag: dev}
+patches:
+  - target: {kind: ConfigMap, name: rahbar-config}
+    patch: |-
+      - {op: replace, path: /data/LLM_PROVIDER, value: ollama-host}
+      - {op: replace, path: /data/OLLAMA_URL, value: "http://host.minikube.internal:11434"}

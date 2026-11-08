@@ -1,0 +1,15 @@
+# Apply order is handled by kustomize (Namespace first). secret.placeholder.yaml is
+# deliberately NOT listed: applying it would overwrite the real Secret.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - networkpolicy.yaml
+  - chroma.yaml
+  - redis.yaml
+  - api.yaml
+  - ui.yaml
+  - ingress.yaml
+  - indexer-job.yaml
+  - indexer-cronjob.yaml

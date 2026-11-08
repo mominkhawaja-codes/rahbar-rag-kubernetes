@@ -1,0 +1,32 @@
+# One ConfigMap for both programs: the api and the indexer read EMBED_MODEL from the
+# same key, which is what makes it a pin (section 4.4). Overlays change values here,
+# never in the images.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rahbar-config
+  namespace: rahbar
+data:
+  RETRIEVER: "chroma"
+  LLM_PROVIDER: "ollama-host"
+  EMBED_MODEL: "nomic-embed-text"
+  CHROMA_HOST: "chroma"
+  CHROMA_PORT: "8000"
+  CHROMA_COLLECTION: "rahbar"
+  TOP_K: "5"
+  TEMPERATURE: "0.2"
+  LLM_MODEL: "llama3.2:3b"
+  LLM_TIMEOUT: "60"
+  OLLAMA_URL: "http://host.minikube.internal:11434"
+  HOSTED_BASE_URL: ""
+  HOSTED_JSON_MODE: "json_object"
+  RELEVANCE_FLOOR: "0.45"
+  CACHE_BACKEND: "redis"
+  REDIS_URL: "redis://redis:6379/0"
+  CACHE_THRESHOLD: "0.95"
+  CACHE_TTL: "86400"
+  LOG_LEVEL: "INFO"
+  CORPUS_DIR: "/corpus"
+  CHUNK_SIZE: "400"
+  CHUNK_OVERLAP: "50"
+  OCR_ENABLED: "true"

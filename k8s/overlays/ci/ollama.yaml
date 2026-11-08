@@ -1,0 +1,88 @@
+# CI only: Ollama inside the kind cluster, used for embeddings (nomic-embed-text).
+# Generation uses the stub provider in CI: tests and gates never depend on a real LLM.
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama
+  namespace: rahbar
+  labels: {app: ollama}
+spec:
+  type: ClusterIP
+  selector: {app: ollama}
+  ports:
+    - {name: http, port: 11434, targetPort: 11434}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama
+  namespace: rahbar
+  labels: {app: ollama}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: ollama}
+  template:
+    metadata:
+      labels: {app: ollama}
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: ollama
+          image: ollama/ollama:0.5.7
+          ports:
+            - containerPort: 11434
+          env:
+            - {name: OLLAMA_HOST, value: "0.0.0.0"}
+          readinessProbe:
+            httpGet: {path: /api/version, port: 11434}
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: {path: /api/version, port: 11434}
+            periodSeconds: 20
+          resources:
+            requests: {cpu: 250m, memory: 512Mi}
+            limits: {cpu: "2", memory: 2Gi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - {name: models, mountPath: /root/.ollama}
+      volumes:
+        - name: models
+          emptyDir: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ollama-access
+  namespace: rahbar
+spec:
+  podSelector:
+    matchLabels: {app: ollama}
+  policyTypes: ["Ingress", "Egress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - {key: app, operator: In, values: [api, indexer]}
+      ports: [{protocol: TCP, port: 11434}]
+  egress:
+    - ports: [{protocol: TCP, port: 443}]      # pulling the model
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: to-ollama
+  namespace: rahbar
+spec:
+  podSelector:
+    matchExpressions:
+      - {key: app, operator: In, values: [api, indexer]}
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - podSelector: {matchLabels: {app: ollama}}
+      ports: [{protocol: TCP, port: 11434}]

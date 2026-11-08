@@ -1,0 +1,26 @@
+# kind in GitHub Actions: images built in the workflow and loaded with `kind load`
+# (tag ci), the fixture corpus baked into the indexer image, embeddings from the
+# in-cluster Ollama, and the stub LLM. The one-shot Job is removed: the workflow pulls
+# the embedding model first, then runs `kubectl create job --from=cronjob/reindex`.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+  - ollama.yaml
+images:
+  - {name: rahbar-api, newTag: ci}
+  - {name: rahbar-indexer, newTag: ci}
+  - {name: rahbar-ui, newTag: ci}
+patches:
+  - target: {kind: ConfigMap, name: rahbar-config}
+    patch: |-
+      - {op: replace, path: /data/LLM_PROVIDER, value: stub}
+      - {op: replace, path: /data/OLLAMA_URL, value: "http://ollama:11434"}
+      - {op: replace, path: /data/CORPUS_DIR, value: /fixtures}
+  - target: {kind: Job, name: indexer}
+    patch: |-
+      $patch: delete
+      apiVersion: batch/v1
+      kind: Job
+      metadata:
+        name: indexer

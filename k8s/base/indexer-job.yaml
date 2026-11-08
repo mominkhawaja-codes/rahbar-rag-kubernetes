@@ -1,0 +1,79 @@
+# The indexer runs as a Job (ADR 0001): the only writer to Chroma, once, then it exits.
+# Exit 0 means the index was swapped in; any other code fails the pod and Kubernetes
+# retries it up to backoffLimit. The live index is untouched until the new one is complete.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: indexer
+  namespace: rahbar
+  labels: {app: indexer}
+spec:
+  backoffLimit: 3
+  activeDeadlineSeconds: 3600
+  template:
+    metadata:
+      labels: {app: indexer}
+    spec:
+      automountServiceAccountToken: false
+      restartPolicy: OnFailure
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
+      initContainers:
+        # wait for Chroma instead of burning a retry on a cold start
+        - name: wait-for-chroma
+          image: rahbar-indexer:dev
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef: {name: rahbar-config}
+          command: ["python", "-c"]
+          args:
+            - |
+              import os, time, urllib.request
+              url = f"http://{os.environ['CHROMA_HOST']}:{os.environ['CHROMA_PORT']}/api/v2/heartbeat"
+              for _ in range(60):
+                  try:
+                      urllib.request.urlopen(url, timeout=2)
+                      break
+                  except Exception:
+                      time.sleep(5)
+              else:
+                  raise SystemExit("chroma never answered " + url)
+          resources:
+            requests: {cpu: 10m, memory: 32Mi}
+            limits: {cpu: 100m, memory: 64Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+      containers:
+        - name: indexer
+          image: rahbar-indexer:dev
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef: {name: rahbar-config}
+          resources:
+            # OCR rasterises one 300-dpi page at a time; the limit is checked against
+            # `kubectl top` output in docs/ENGINEERING-NOTES.md (question 4).
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1536Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}

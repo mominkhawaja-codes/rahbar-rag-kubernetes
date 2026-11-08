@@ -1,0 +1,69 @@
+# The semantic cache store (ADR 0003). A cache, not a database: no persistence, and
+# losing it costs only cold answers. ClusterIP only.
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: rahbar
+  labels: {app: redis}
+spec:
+  type: ClusterIP
+  selector: {app: redis}
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: rahbar
+  labels: {app: redis}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: redis}
+  template:
+    metadata:
+      labels: {app: redis}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: redis
+          image: redis:7.4.2-alpine
+          imagePullPolicy: IfNotPresent
+          args: ["--save", "", "--appendonly", "no", "--maxmemory", "200mb",
+                 "--maxmemory-policy", "allkeys-lru"]
+          ports:
+            - containerPort: 6379
+          readinessProbe:
+            exec: {command: ["redis-cli", "ping"]}
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket: {port: 6379}
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          emptyDir: {}

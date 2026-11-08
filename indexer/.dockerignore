@@ -1,0 +1,16 @@
+.git
+__pycache__
+*.pyc
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.venv
+venv
+tests
+.env
+.env.*
+*secret*
+Dockerfile
+# corpus/ and fixtures/ are deliberately NOT ignored: they are the staged documents.
+corpus/.gitkeep
+fixtures/.gitkeep

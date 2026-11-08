@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from ..config import Settings
+from ..embeddings import Embedder
 from .base import Retriever
 
 
-def get_retriever(settings: Settings) -> Retriever:
+def get_retriever(settings: Settings, embedder: Embedder | None = None) -> Retriever:
     if settings.retriever == "stub":
         from .stub import StubRetriever
 
@@ -12,5 +13,5 @@ def get_retriever(settings: Settings) -> Retriever:
     if settings.retriever == "chroma":
         from .chroma import ChromaRetriever
 
-        return ChromaRetriever(settings)
+        return ChromaRetriever(settings, embedder=embedder)
     raise ValueError(f"unknown RETRIEVER {settings.retriever!r}; expected stub or chroma")

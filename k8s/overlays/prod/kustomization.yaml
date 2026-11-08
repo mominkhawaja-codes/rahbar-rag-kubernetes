@@ -1,0 +1,22 @@
+# Production-shaped: images from Docker Hub, pinned to the commit SHA by the CD workflow
+# (`kustomize edit set image ...:${GITHUB_SHA}`), a hosted LLM whose key comes from the
+# Secret, and more headroom for the API.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+images:
+  - {name: rahbar-api, newName: docker.io/DOCKERHUB_USER/rahbar-api, newTag: latest-sha}
+  - {name: rahbar-indexer, newName: docker.io/DOCKERHUB_USER/rahbar-indexer, newTag: latest-sha}
+  - {name: rahbar-ui, newName: docker.io/DOCKERHUB_USER/rahbar-ui, newTag: latest-sha}
+patches:
+  - target: {kind: ConfigMap, name: rahbar-config}
+    patch: |-
+      - {op: replace, path: /data/LLM_PROVIDER, value: hosted}
+      - {op: replace, path: /data/HOSTED_BASE_URL, value: "https://api.groq.com/openai/v1"}
+      - {op: replace, path: /data/LLM_MODEL, value: "llama-3.1-8b-instant"}
+      - {op: replace, path: /data/LOG_LEVEL, value: WARNING}
+  - target: {kind: Deployment, name: api}
+    patch: |-
+      - {op: replace, path: /spec/template/spec/containers/0/imagePullPolicy, value: Always}
+      - {op: replace, path: /spec/template/spec/containers/0/resources/limits/memory, value: 768Mi}

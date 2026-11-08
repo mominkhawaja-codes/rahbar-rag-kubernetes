@@ -1,0 +1,72 @@
+# CD: on every push to main. Nothing is published unless the full CI pipeline passed
+# (`needs: [ci]`); images are tagged with the commit SHA, which is also the rollback key.
+#
+# Repository secrets used:
+#   DOCKERHUB_USERNAME, DOCKERHUB_TOKEN   a Docker Hub access token, never a password
+#   KUBECONFIG                            optional; without it the deploy job is skipped
+name: cd
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cd-main
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  publish:
+    needs: [ci]
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        component: [api, indexer, ui]
+    steps:
+      - uses: actions/checkout@v4
+      - name: stage the fixture corpus (the real corpus is never published)
+        if: matrix.component == 'indexer'
+        run: |
+          mkdir -p indexer/corpus indexer/fixtures
+          cp eval/fixtures/*.md indexer/fixtures/ && rm -f indexer/fixtures/README.md
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.component }}
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/rahbar-${{ matrix.component }}:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/rahbar-${{ matrix.component }}:main
+
+  deploy:
+    needs: [publish]
+    runs-on: ubuntu-24.04
+    env:
+      KUBECONFIG_DATA: ${{ secrets.KUBECONFIG }}
+      DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: skip when no cluster is configured
+        if: env.KUBECONFIG_DATA == ''
+        run: echo "No KUBECONFIG secret; images are published, deploy skipped."
+      - name: deploy the prod overlay at this commit
+        if: env.KUBECONFIG_DATA != ''
+        run: |
+          mkdir -p ~/.kube && printf '%s' "$KUBECONFIG_DATA" > ~/.kube/config
+          cd k8s/overlays/prod
+          for c in api indexer ui; do
+            kustomize edit set image "rahbar-$c=docker.io/$DOCKERHUB_USER/rahbar-$c:${GITHUB_SHA}"
+          done
+          kubectl apply -k .
+          kubectl -n rahbar rollout status deployment/api --timeout=300s
+          kubectl -n rahbar rollout status deployment/ui --timeout=180s
