@@ -93,8 +93,17 @@ jobs:
             https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.15.1/deploy/static/provider/kind/deploy.yaml
           echo "2a3ae008c8786431115502644e77ab398fdebfb721a5d1195ed3089cde3299df  ingress-nginx.yaml" | sha256sum -c -
           kubectl apply -f ingress-nginx.yaml
-          kubectl -n ingress-nginx wait --for=condition=complete job --all --timeout=180s
+          # The admission Jobs have ttlSecondsAfterFinished: 0 and vanish as they finish, so
+          # waiting on them races their deletion. Wait for what they produce instead: the
+          # controller (needs their certificate Secret) and the webhook's caBundle (their patch).
           kubectl -n ingress-nginx rollout status deployment/ingress-nginx-controller --timeout=300s
+          for i in $(seq 1 60); do
+            ca="$(kubectl get validatingwebhookconfiguration ingress-nginx-admission \
+                    -o jsonpath='{.webhooks[0].clientConfig.caBundle}' 2>/dev/null || true)"
+            [ -n "$ca" ] && break
+            sleep 2
+          done
+          [ -n "$ca" ] || { echo "admission webhook caBundle never set"; exit 1; }
       - name: point the ci overlay at the published images
         working-directory: k8s/overlays/ci
         run: |
