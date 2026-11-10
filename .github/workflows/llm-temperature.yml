@@ -1,0 +1,62 @@
+# Generation-temperature experiment with a real model (llama3.2:3b on Ollama, CPU).
+# Runs when the experiment changes, or by hand.
+name: llm-temperature
+
+on:
+  push:
+    branches: [dev]
+    paths:
+      - eval/temperature_experiment.py
+      - .github/workflows/llm-temperature.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  measure:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      LLM_MODEL: llama3.2:3b
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - run: pip install -r api/requirements.txt
+      - name: start Ollama and pull the model
+        run: |
+          docker run -d --name ollama -p 11434:11434 \
+            ollama/ollama:0.5.7@sha256:7e672211886f8bd4448a98ed577e26c816b9e8b052112860564afaa2c105800e
+          for i in $(seq 1 30); do curl -sf http://localhost:11434/api/version && break; sleep 2; done
+          docker exec ollama ollama pull "$LLM_MODEL"
+          digest="$(curl -s http://localhost:11434/api/tags | python -c "import json,sys,os; print([m['digest'] for m in json.load(sys.stdin)['models'] if m['name']==os.environ['LLM_MODEL']][0])")"
+          echo "::notice title=model::${LLM_MODEL} digest ${digest}"
+      - name: measure
+        env:
+          OLLAMA_URL: http://localhost:11434
+        run: python eval/temperature_experiment.py --out temperature.json
+      - name: publish the summary as annotations
+        if: always()
+        run: |
+          [ -f temperature.json ] || exit 0
+          python - <<'EOF'
+          import json
+          d = json.load(open("temperature.json"))
+          for s in d["summary"]:
+              text = json.dumps(s, separators=(",", ":")).replace("%", "%25")
+              print(f"::notice title=temperature {s['temperature']}::{text}")
+          wrong = [{k: r[k] for k in ("t", "id", "rep", "answered", "fallback", "retried", "answer")}
+                   for r in d["rows"] if not r["correct"]][:12]
+          text = json.dumps(wrong, separators=(",", ":")).replace("%", "%25")
+          print(f"::notice title=incorrect generations (first 12)::{text[:3900]}")
+          EOF
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: llm-temperature
+          path: temperature.json
+          if-no-files-found: ignore
