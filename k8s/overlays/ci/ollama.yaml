@@ -52,7 +52,8 @@ spec:
             periodSeconds: 20
           resources:
             requests: {cpu: 250m, memory: 512Mi}
-            limits: {cpu: "2", memory: 2Gi}
+            # 2 GiB OOM-kills the llama3.2:3b runner (rag-eval run 43068217988); 8 GiB runs it
+            limits: {cpu: "2", memory: 8Gi}
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:

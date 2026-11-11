@@ -14,7 +14,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from ..schemas import Answer, Citation, Passage
 
@@ -85,6 +85,7 @@ def has_lexical_support(question: str, passages: list[Passage]) -> bool:
 class CitationCheck:
     valid: list[Citation]
     dropped: int
+    rejected: list[str] = field(default_factory=list)   # "source | section" of each dropped one
 
 
 def check_citations(citations: list[Citation], passages: list[Passage]) -> CitationCheck:
@@ -92,6 +93,7 @@ def check_citations(citations: list[Citation], passages: list[Passage]) -> Citat
     valid: list[Citation] = []
     seen: set[tuple[str, str]] = set()
     dropped = 0
+    rejected: list[str] = []
     for c in citations:
         key = (_norm(c.source), _norm(c.section))
         match = by_key.get(key)
@@ -101,13 +103,14 @@ def check_citations(citations: list[Citation], passages: list[Passage]) -> Citat
             match = prefixed[0] if len(prefixed) == 1 else None
         if match is None:
             dropped += 1
+            rejected.append(f"{c.source[:60]} | {c.section[:60]}")
             continue
         canonical = (match.source, match.section)
         if canonical in seen:
             continue
         seen.add(canonical)
         valid.append(Citation(source=match.source, section=match.section, page=match.page))
-    return CitationCheck(valid=valid, dropped=dropped)
+    return CitationCheck(valid=valid, dropped=dropped, rejected=rejected)
 
 
 def abstention(reason: str) -> Answer:

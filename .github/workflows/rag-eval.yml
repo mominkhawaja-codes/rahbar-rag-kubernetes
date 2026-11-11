@@ -26,7 +26,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ollama_memory: [2g, 8g]
+        ollama_memory: [8g]     # 2g was measured in run 43068217988: the model runner is OOM-killed
     env:
       LLM_MODEL: llama3.2:3b
     steps:
@@ -126,6 +126,16 @@ jobs:
               note("summary", {k: v for k, v in r.items() if k != "rows"})
               note("questions", [[x["id"], x["type"], x["outcome"], x["declined"], x["error"],
                                   x["recall@5"], x["top"], x["s"]] for x in r["rows"]])
+          if os.path.exists("api.log"):
+              rej = []
+              for ln in open("api.log", errors="replace"):
+                  try:
+                      r = json.loads(ln)
+                  except ValueError:
+                      continue
+                  if r.get("msg") == "citations rejected":
+                      rej.append([r.get("request_id"), r.get("cited"), r.get("rejected"), r.get("offered")[:2]])
+              note("citations rejected (question, cited, rejected, first offered)", rej or "none")
           if os.path.exists("ollama.log"):
               pat = re.compile(r"(?i)out of memory|oom|killed|requires more system memory|error|panic|loading model|llama runner started")
               lines = [ln[:200] for ln in open("ollama.log", errors="replace") if pat.search(ln)]

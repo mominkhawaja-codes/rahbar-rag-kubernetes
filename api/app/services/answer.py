@@ -72,6 +72,12 @@ def _ground(answer: Answer, passages: list[Passage]) -> tuple[Answer, str | None
     check = check_citations(answer.citations, passages)
     if check.dropped:
         metrics.CITATIONS_DROPPED.inc(check.dropped)
+    if check.dropped or not check.valid:
+        # what the model cited versus what it was given: tells a fabricated citation
+        # from a real passage cited in another form
+        log.info("citations rejected", extra={
+            "rejected": check.rejected[:5], "cited": len(answer.citations),
+            "offered": [f"{p.source[:60]} | {p.section[:60]}" for p in passages][:5]})
     if not check.valid:
         metrics.ABSTENTIONS.labels(reason="no_valid_citation").inc()
         return abstention("the answer cited no retrieved passage"), "no_valid_citation"

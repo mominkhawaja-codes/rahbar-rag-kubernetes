@@ -21,7 +21,7 @@ from ...schemas import Answer, Passage
 
 log = logging.getLogger("rahbar.llm")
 
-PROMPT_VERSION = "v3"   # part of the cache key: a new prompt must not reuse old answers
+PROMPT_VERSION = "v4"   # part of the cache key: a new prompt must not reuse old answers
 
 SYSTEM = """You are RAHBAR, an assistant that answers questions about FAST-NUCES rules,
 policies and fees for students. Follow these rules exactly.
@@ -39,6 +39,10 @@ policies and fees for students. Follow these rules exactly.
 5. Quote numbers, thresholds, clause numbers, fees and dates exactly as written.
 6. Keep "answer" short: two to five sentences for a student. Put your working in
    "reasoning"; it is never shown to the user.
+7. "answered_from_context" says whether your answer comes from the passages. Set it to
+   true whenever a passage contains the answer and you state it, including short answers
+   such as "No", "50%" or "not allowed", and when a passage shows that a claim in the
+   question is false. Set it to false only in the case of rule 3.
 
 Reply with a single JSON object and nothing else, matching this JSON schema:
 """
