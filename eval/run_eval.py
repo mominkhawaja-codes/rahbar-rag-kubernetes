@@ -39,9 +39,12 @@ def load_golden(path: Path) -> list[dict]:
     return questions
 
 
-def ask(client: httpx.Client, api: str, question: str) -> dict:
-    """POST one question and return the AskResponse as a dict (see api/app/schemas.py)."""
-    response = client.post(f"{api.rstrip('/')}/api/ask", json={"question": question})
+def ask(client: httpx.Client, api: str, question: str, request_id: str | None = None) -> dict:
+    """POST one question and return the AskResponse as a dict (see api/app/schemas.py).
+    The request id (the golden question's id) ties the API's log lines to the question."""
+    headers = {"X-Request-ID": request_id} if request_id else {}
+    response = client.post(f"{api.rstrip('/')}/api/ask", json={"question": question},
+                           headers=headers)
     response.raise_for_status()
     return response.json()
 
@@ -141,12 +144,16 @@ def summarise(rows: list[dict]) -> dict:
             cited += n_cit
             valid_cited += round(validity * n_cit)
         answered = bool(resp.get("answered_from_context"))
+        # A request that failed (HTTP error, timeout) is neither a correct abstention nor a
+        # false one: it did not answer at all. Counting it as "declined" would score an
+        # outage as honest refusal.
+        failed = bool(resp.get("error"))
         if row["must_abstain"]:
             abstain_total += 1
-            abstain_ok += int(not answered)
+            abstain_ok += int(not answered and not failed)
         else:
             answerable += 1
-            false_abstain += int(not answered)
+            false_abstain += int(not answered and not failed)
         hit = None
         if row.get("expect") and not row["must_abstain"]:
             expect_total += 1
@@ -188,10 +195,12 @@ def gate(results: dict, baseline: dict | None) -> list[str]:
         failures.append(f"citation validity {validity:.3f} < {MIN_CITATION_VALIDITY:.2f}")
     abstention = results.get("abstention_correctness")
     if abstention is not None and abstention < REQUIRED_ABSTENTION:
-        missed = [q["id"] for q in results.get("per_question", [])
-                  if q["must_abstain"] and q["answered_from_context"]]
+        rows = [q for q in results.get("per_question", []) if q["must_abstain"]]
+        missed = [q["id"] for q in rows if q["answered_from_context"]]
+        failed = [q["id"] for q in rows if q.get("error")]
         failures.append(f"abstention correctness {abstention:.2f} < {REQUIRED_ABSTENTION:.2f}; "
-                        f"answered instead of declining: {', '.join(missed)}")
+                        f"answered instead of declining: {', '.join(missed) or 'none'}; "
+                        f"request failed: {', '.join(failed) or 'none'}")
     return failures
 
 
@@ -215,7 +224,7 @@ def main() -> int:
         for q in questions:
             started = time.perf_counter()
             try:
-                response = ask(client, args.api, q["question"])
+                response = ask(client, args.api, q["question"], request_id=str(q["id"]))
             except httpx.HTTPError as exc:
                 # One failed request must not discard every other measurement. It is
                 # recorded as a non-answer with no retrieval, so it counts against

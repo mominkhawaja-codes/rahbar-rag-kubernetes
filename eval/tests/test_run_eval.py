@@ -94,6 +94,23 @@ def test_gate_fails_on_recall_drop_bad_citations_and_missed_abstention() -> None
     assert any("q2" in f for f in failures)
 
 
+def test_a_failed_request_is_neither_a_correct_nor_a_false_abstention() -> None:
+    error = {"answer": "", "citations": [], "retrieved": [], "answered_from_context": False,
+             "error": "HTTPStatusError: 503"}
+    rows = [
+        {"id": "q17", "type": "abstain", "must_abstain": True, "relevant": [], "expect": None,
+         "seconds": 0.5, "response": dict(error)},
+        {"id": "q01", "type": "ordinary", "must_abstain": False, "expect": "2.00",
+         "relevant": [{"source": "a.pdf", "section": "5.4"}], "seconds": 0.5,
+         "response": dict(error)},
+    ]
+    results = ev.summarise(rows)
+    assert results["abstention_correctness"] == 0.0       # an outage is not an honest refusal
+    assert results["false_abstention_rate"] == 0.0        # nor a false abstention
+    assert results["errors"] == 2
+    assert any("q17" in f for f in ev.gate(results, None))
+
+
 def test_recall_within_five_points_of_baseline_passes() -> None:
     assert ev.gate({"recall@5": 0.76, "citation_validity": None,
                     "abstention_correctness": None}, {"recall@5": 0.80}) == []

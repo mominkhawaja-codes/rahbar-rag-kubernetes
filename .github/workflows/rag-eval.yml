@@ -1,0 +1,146 @@
+# Real-model RAG evaluation on the real corpus (docs/PIPELINE.md, "Real-model evaluation").
+# The real API process, Chroma, Redis, Ollama llama3.2:3b and nomic-embed-text, the real
+# FAST-NUCES corpus indexed by the real indexer image, and eval/golden.yaml unchanged.
+# Two conditions side by side: Ollama limited to 2 GiB (the CI overlay's limit, where the
+# earlier real-model run saw HTTP 503s) and 8 GiB. Raw results and logs are artifacts.
+name: rag-eval
+
+on:
+  push:
+    branches: [dev]
+    paths:
+      - .github/workflows/rag-eval.yml
+      - eval/tools/rag_report.py
+      - api/app/providers/llm/prompt.py
+      - api/app/services/answer.py
+      - api/app/services/grounding.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        ollama_memory: [2g, 8g]
+    env:
+      LLM_MODEL: llama3.2:3b
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - run: pip install -r api/requirements.txt -r indexer/requirements.txt
+      - name: reuse the fetched corpus while its manifest is unchanged
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: corpus/raw
+          key: corpus-${{ hashFiles('corpus/MANIFEST.md', 'corpus/sources.yaml') }}
+      - name: fetch what is missing (politely) and verify against the MANIFEST
+        run: |
+          python corpus/fetch.py
+          python corpus/fetch.py --verify
+      - name: start Chroma, Redis and Ollama (Ollama limited to ${{ matrix.ollama_memory }})
+        run: |
+          docker network create rahbar-net
+          docker run -d --name chroma --network rahbar-net -p 8000:8000 \
+            chromadb/chroma:1.0.12@sha256:28a3b2c05c74c83686c2273d4d0994b80c481805d0f47887f289c53a4616e592
+          docker run -d --name redis --network rahbar-net -p 6379:6379 \
+            redis:8.8.4-alpine3.23@sha256:c027ae0f677dcf73d74038256f5b88c9ba7b11ccbfae97e96a9f091208d36125
+          docker run -d --name ollama --network rahbar-net -p 11434:11434 \
+            --memory ${{ matrix.ollama_memory }} --memory-swap ${{ matrix.ollama_memory }} \
+            --restart on-failure:10 \
+            ollama/ollama:0.5.7@sha256:7e672211886f8bd4448a98ed577e26c816b9e8b052112860564afaa2c105800e
+          for i in $(seq 1 30); do curl -sf http://localhost:8000/api/v2/heartbeat && break; sleep 2; done
+          for i in $(seq 1 30); do curl -sf http://localhost:11434/api/version && break; sleep 2; done
+          docker exec ollama ollama pull nomic-embed-text
+          docker exec ollama ollama pull "$LLM_MODEL"
+      - name: index the real corpus with the real indexer image
+        run: |
+          make stage-corpus
+          docker build -t rahbar-indexer:eval indexer
+          docker run --rm --network rahbar-net -e CORPUS_DIR=/corpus -e CHROMA_HOST=chroma \
+            -e CHROMA_PORT=8000 -e CHROMA_COLLECTION=rahbar -e OLLAMA_URL=http://ollama:11434 \
+            -e EMBED_MODEL=nomic-embed-text -e CHUNK_SIZE=400 -e CHUNK_OVERLAP=50 \
+            -e OCR_ENABLED=true rahbar-indexer:eval 2>&1 | tee index.log | grep -E '"(corpus chunked|indexer finished)"'
+      - name: start the API (production ConfigMap values; LLM_TIMEOUT 300 as in the earlier run)
+        working-directory: api
+        env:
+          RETRIEVER: chroma
+          LLM_PROVIDER: ollama-host
+          EMBED_MODEL: nomic-embed-text
+          CHROMA_HOST: localhost
+          CHROMA_PORT: "8000"
+          CHROMA_COLLECTION: rahbar
+          OLLAMA_URL: http://localhost:11434
+          TOP_K: "5"
+          TEMPERATURE: "0.2"
+          LLM_TIMEOUT: "300"
+          RELEVANCE_FLOOR: "0.45"
+          CACHE_BACKEND: redis
+          REDIS_URL: redis://localhost:6379/0
+          CACHE_THRESHOLD: "0.95"
+          LOG_LEVEL: INFO
+        run: |
+          nohup python -m uvicorn app.main:app --host 127.0.0.1 --port 8080 > ../api.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://localhost:8080/readyz && break; sleep 2; done
+          curl -sf http://localhost:8080/readyz
+      - name: evaluate eval/golden.yaml through the API
+        run: |
+          curl -s http://localhost:8080/metrics > metrics-before.txt
+          start=$(date +%s)
+          python eval/run_eval.py --api http://localhost:8080 --golden eval/golden.yaml \
+            --baseline eval/baseline.json --out results-real.json --timeout 900 \
+            || echo "gate failed; results kept"
+          echo $(( $(date +%s) - start )) > duration.txt
+          curl -s http://localhost:8080/metrics > metrics-after.txt
+      - name: collect Ollama's state and build the report
+        if: always()
+        run: |
+          docker inspect ollama --format '{"restarts": {{.RestartCount}}, "oom_killed": {{.State.OOMKilled}}, "running": {{.State.Running}}}' > ollama.json || echo '{}' > ollama.json
+          docker logs ollama > ollama.log 2>&1 || true
+          [ -f results-real.json ] || exit 0
+          python eval/tools/rag_report.py --results results-real.json \
+            --metrics-before metrics-before.txt --metrics-after metrics-after.txt \
+            --api-log api.log --ollama-state ollama.json --duration "$(cat duration.txt)" \
+            --out report.json
+      - name: publish the report as annotations
+        if: always()
+        env:
+          MEM: ${{ matrix.ollama_memory }}
+        run: |
+          python - <<'EOF'
+          import json, os, re
+          mem = os.environ["MEM"]
+          def note(title, body):
+              text = body if isinstance(body, str) else json.dumps(body, separators=(",", ":"))
+              print(f"::notice title=rag-eval {mem}: {title}::{text.replace('%', '%25')[:3900]}")
+          if os.path.exists("report.json"):
+              r = json.load(open("report.json"))
+              note("summary", {k: v for k, v in r.items() if k != "rows"})
+              note("questions", [[x["id"], x["type"], x["outcome"], x["declined"], x["error"],
+                                  x["recall@5"], x["top"], x["s"]] for x in r["rows"]])
+          if os.path.exists("ollama.log"):
+              pat = re.compile(r"(?i)out of memory|oom|killed|requires more system memory|error|panic|loading model|llama runner started")
+              lines = [ln[:200] for ln in open("ollama.log", errors="replace") if pat.search(ln)]
+              note("ollama log (matching lines)", " | ".join(lines[:15]) or "no matching lines")
+          EOF
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: rag-eval-${{ matrix.ollama_memory }}
+          path: |
+            results-real.json
+            report.json
+            api.log
+            ollama.log
+            ollama.json
+            index.log
+            metrics-*.txt
+          if-no-files-found: ignore
