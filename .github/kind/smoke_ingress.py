@@ -46,12 +46,21 @@ def check(cond: bool, message: str) -> None:
         sys.exit(1)
 
 
-# The Ingress can take a few seconds to be admitted and synced into nginx.
+# The Ingress can take a few seconds to be admitted and synced into nginx, and each
+# backend's endpoints reach nginx separately: / can be served while /api still answers
+# nginx's own 503 page (CD run 43068217849). GET on the POST-only /api/ask returns 405
+# from FastAPI once /api is routed to the app, so wait for that too.
 for _ in range(30):
     status, _, body = request("/")
     if status == 200:
         break
     time.sleep(2)
+for _ in range(30):
+    status, _, body = request("/api/ask")
+    if status == 405:
+        break
+    time.sleep(2)
+check(status == 405, f"/api is routed to the api pods (GET /api/ask -> HTTP {status}, expect 405)")
 
 status, _, _ = request("/", host="not-rahbar.example")
 check(status == 404, f"unknown Host is rejected by ingress-nginx (HTTP {status})")
