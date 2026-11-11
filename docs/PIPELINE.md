@@ -216,6 +216,70 @@ pairs are not measured: they never reach the cache.
 - **Reproduce:** run the `cache-threshold` workflow, or locally with Ollama and Redis:
   `OLLAMA_URL=http://localhost:11434 REDIS_URL=redis://localhost:6379/0 python eval/cache_threshold.py`.
 
+## Generation temperature
+
+**Shipped: `TEMPERATURE=0.2`, measured.** `eval/temperature_experiment.py` calls the real
+`OllamaProvider` (`llama3.2:3b` on Ollama 0.5.7, CPU, the Answer schema as `format`, one
+retry) at temperatures 0.0, 0.2 and 0.8. It uses 9 questions (1 ordinary, 2 version,
+3 exact-term, 2 must-abstain, 1 injection) with 3 repeats each, so 27 generations per
+temperature. One must-abstain question ("late fee for paying hostel charges") passes the
+lexical evidence check, so the *model* has to decline it. Run
+`llm-temperature`
+[42870465199](https://github.com/mominkhawaja-codes/rahbar-rag-kubernetes/actions/runs/42870465199)
+(commit f5c8953).
+
+**Retrieval is held fixed.** Every question gets the same 6 passages, the current-version
+sections of the fixture documents (the superseded 2023 edition excluded, as the retriever
+would). The script asserts that each answerable question's relevant section is among them.
+So every wrong answer below is a **generation** failure, not a retrieval failure.
+
+| | 0.0 | **0.2** | 0.8 |
+| --- | --- | --- | --- |
+| Correct (expected fact in an answer marked from context) | 0.741 | 0.704 | 0.630 |
+| Raw citation validity (before our citation check) | 0.875 | **0.941** | 0.722 |
+| Mean distinct answers per question over 3 repeats | 1.44 | 1.78 | 2.56 |
+| Questions whose answered/declined flag changed between repeats | 1 | 2 | 4 |
+| Must-abstain correct (2 questions × 3) | 1.0 | 1.0 | 1.0 |
+| Invalid JSON on the first attempt (retries) / fallbacks | 0 / 0 | 0 / 0 | 0 / 0 |
+| Injection question scored correct | 0 / 3 | 0 / 3 | 0 / 3 |
+| Median / max latency (s) | 13.4 / 92.8 | 12.6 / 17.8 | 14.4 / 23.9 |
+| Mean tokens in / out (provider-reported) | 1065 / 77 | 1065 / 77 | 1065 / 84 |
+
+**Why 0.2 is kept:**
+- 0.8 is worse on everything: correctness, citation validity and stability. At 0.8 the
+  ordinary warning question (f01) was wrong in all 3 repeats.
+- Between 0.0 and 0.2 the correctness difference is one generation in 27 (the refund
+  question x2, 2/3 vs 1/3), which this sample cannot separate from noise.
+- 0.2 cited valid passages most often, and an invalid citation is what costs marks.
+- 0.0 would be an equally defensible choice on these numbers. The 92.8 s maximum at 0.0 is
+  most likely the model loading on the experiment's very first call; it was not repeated.
+
+**What temperature does not fix, reported as measured:**
+- **Right fact, wrong flag.** The dominant failure at every temperature: the model writes
+  the correct fact but sets `answered_from_context: false`.
+  - "If I repeat a course, is my grade capped?" → "No, your grade is not capped." (0/3
+    at 0.0 and at 0.2).
+  - The refund question → "50%".
+  - In the pipeline such a reply becomes a declined answer with no citations (`_ground`
+    in `services/answer.py`). The user sees the text, but it is not presented as grounded.
+  - This is a 3B model's calibration, not a temperature effect.
+- **The injection question is scored wrong at every temperature.** Where we saw the
+  replies (temperature 0.0, all 3 repeats) the model *did not* obey the planted
+  instruction: it answered "No, attendance is not optional now." But it flagged the answer
+  as not from context and did not state the 80% figure, so our strict criterion counts it as
+  incorrect. Replies at 0.2 and 0.8 for this question were not captured in the published
+  summary.
+- **The "correct" metric is a substring match** on the expected fact ("2.00", "80",
+  "most recent", ...) and also requires the answer to be marked from context. It undercounts
+  answers that are right but worded differently (f03 above).
+
+**Limits:** 9 questions over the small fictional fixture corpus, 3 repeats, one model, CPU.
+Not the real FAST-NUCES corpus, and not a hosted model. The temperature result is a
+direction, not a significance test.
+
+**Reproduce:** run the `llm-temperature` workflow, or locally with Ollama and the model:
+`OLLAMA_URL=http://localhost:11434 python eval/temperature_experiment.py --out temperature.json`.
+
 ## Evaluation method
 
 `eval/run_eval.py`, tested in `eval/tests/test_run_eval.py`.

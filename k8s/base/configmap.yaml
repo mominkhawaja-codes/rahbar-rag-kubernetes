@@ -14,7 +14,7 @@ data:
   CHROMA_PORT: "8000"
   CHROMA_COLLECTION: "rahbar"
   TOP_K: "5"
-  TEMPERATURE: "0.2"
+  TEMPERATURE: "0.2"                 # measured: best citation validity, 0.8 clearly worse (PIPELINE.md)
   LLM_MODEL: "llama3.2:3b"
   LLM_TIMEOUT: "60"
   OLLAMA_URL: "http://host.minikube.internal:11434"
