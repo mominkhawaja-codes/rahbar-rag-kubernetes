@@ -1,0 +1,110 @@
+# Indexer peak memory (docs/ENGINEERING-NOTES.md, question 4): the real indexer image on
+# the real corpus, under the Job's own limits, measured from the container's cgroup v2
+# accounting (eval/tools/measure_memory.py). A second, deliberately starved run shows the
+# OOM kill and checks what happens to the existing index. Experimental only: it never
+# touches the cluster manifests or the published images.
+name: indexer-memory
+
+on:
+  push:
+    branches: [dev]
+    paths:
+      - eval/tools/measure_memory.py
+      - eval/tools/index_state.py
+      - .github/workflows/indexer-memory.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  measure:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    env:
+      # the Job's environment, from k8s/base/configmap.yaml
+      INDEXER_ENV: >-
+        -e CORPUS_DIR=/corpus -e CHROMA_HOST=chroma -e CHROMA_PORT=8000
+        -e CHROMA_COLLECTION=rahbar -e OLLAMA_URL=http://ollama:11434
+        -e EMBED_MODEL=nomic-embed-text -e CHUNK_SIZE=400 -e CHUNK_OVERLAP=50
+        -e OCR_ENABLED=true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - run: pip install -r indexer/requirements.txt
+      - name: require cgroup v2 (the measurement reads it)
+        run: |
+          echo "cgroup fs: $(stat -fc %T /sys/fs/cgroup); $(docker info --format 'driver {{.CgroupDriver}}, v{{.CgroupVersion}}')"
+          [ "$(stat -fc %T /sys/fs/cgroup)" = "cgroup2fs" ]
+          echo "kernel $(uname -r), $(nproc) CPUs, $(free -m | awk '/Mem:/{print $2}') MiB RAM"
+      - name: fetch the corpus (politely) and verify it against the committed MANIFEST
+        run: |
+          python corpus/fetch.py
+          python corpus/fetch.py --verify
+      - name: build the indexer image with the real corpus (local only, never pushed)
+        run: |
+          make stage-corpus
+          docker build -t rahbar-indexer:mem indexer
+      - name: start Chroma and Ollama on a private network
+        run: |
+          docker network create rahbar-net
+          docker run -d --name chroma --network rahbar-net -p 8000:8000 \
+            chromadb/chroma:1.0.12@sha256:28a3b2c05c74c83686c2273d4d0994b80c481805d0f47887f289c53a4616e592
+          docker run -d --name ollama --network rahbar-net -p 11434:11434 \
+            ollama/ollama:0.5.7@sha256:7e672211886f8bd4448a98ed577e26c816b9e8b052112860564afaa2c105800e
+          for i in $(seq 1 30); do curl -sf http://localhost:8000/api/v2/heartbeat && break; sleep 2; done
+          for i in $(seq 1 30); do curl -sf http://localhost:11434/api/version && break; sleep 2; done
+          docker exec ollama ollama pull nomic-embed-text
+      - name: measure the full run under the Job's limits (1536 MiB, 1 CPU)
+        run: |
+          docker volume create idx-tmp
+          # shellcheck disable=SC2086
+          python eval/tools/measure_memory.py --image rahbar-indexer:mem --name idx-full \
+            --memory 1536m --cpus 1 --network rahbar-net --tmp-volume idx-tmp \
+            $INDEXER_ENV --out mem-full.json
+          python -c "import json,sys; d=json.load(open('mem-full.json')); sys.exit(0 if d['exit_code']==0 else 1)"
+      - name: record the live index
+        run: python eval/tools/index_state.py > state-before.json && cat state-before.json
+      - name: starve a second run (about half the measured anonymous peak)
+        run: |
+          limit="$(python -c "import json; d=json.load(open('mem-full.json')); print(max(128, int(d['anon_max_mib']*0.5)))")"
+          echo "starved limit: ${limit} MiB"
+          # shellcheck disable=SC2086
+          python eval/tools/measure_memory.py --image rahbar-indexer:mem --name idx-oom \
+            --memory "${limit}m" --cpus 1 --network rahbar-net --tmp-volume idx-tmp \
+            $INDEXER_ENV --out mem-oom.json
+      - name: record the index after the starved run
+        run: python eval/tools/index_state.py > state-after.json && cat state-after.json
+      - name: publish the measurements as annotations
+        if: always()
+        run: |
+          python - <<'EOF'
+          import json, os
+          def load(p):
+              return json.load(open(p)) if os.path.exists(p) else None
+          for title, path in (("full run", "mem-full.json"), ("starved run", "mem-oom.json")):
+              d = load(path)
+              if d:
+                  keep = {k: v for k, v in d.items() if k not in ("series", "cgroup", "last_log_lines")}
+                  keep["stages"] = [{k: s.get(k) for k in ("msg", "documents", "pages", "ocr_pages",
+                                     "chunks", "vectors", "dimension", "seconds")} for s in d["stages"]]
+                  keep["last_log"] = d["last_log_lines"][-2:]
+                  text = json.dumps(keep, separators=(",", ":")).replace("%", "%25")
+                  print(f"::notice title=indexer memory, {title}::{text[:3900]}")
+          before, after = load("state-before.json"), load("state-after.json")
+          if before and after:
+              text = json.dumps({"before": before, "after": after}, separators=(",", ":"))
+              print(f"::notice title=live index before and after the starved run::{text[:3900]}")
+          EOF
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: indexer-memory
+          path: |
+            mem-*.json
+            state-*.json
+          if-no-files-found: ignore
