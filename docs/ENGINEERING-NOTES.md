@@ -64,23 +64,86 @@ the right signal; the semantic cache is our cheapest real capacity gain.
 
 ## 4. The indexer's peak memory, its limit, the margin, and the exit code when it is wrong
 
-**Limit:** 1536 Mi, request 512 Mi (`k8s/base/indexer-job.yaml:66`,
-`indexer-cronjob.yaml:71`). It was sized for the worst stage: rasterising one A4 page at
-300 dpi for Tesseract (about 2480 × 3508 px; around 25 MB as RGB, several times that
-while pdf2image and Tesseract hold copies). We OCR one page at a time
-(`indexer/pipeline/extract.py`, `ocr_pdf_pages`) so peak memory does not grow with the
-document.
+**Request 512 Mi, limit 1536 Mi** (`k8s/base/indexer-job.yaml:66,69`,
+`indexer-cronjob.yaml:71,74`).
 
-**Peak: not measured yet.** Take it with `kubectl top pod -n rahbar -l app=indexer
---containers` every few seconds while `make index` runs (metrics-server samples every
-~15 s, so also read `container_memory_working_set_bytes` if Prometheus is installed). Then
-record the peak and the margin (limit ÷ peak) here.
+**Measured peak: 1129.8 MiB.** Workflow `indexer-memory`, run
+[43062518890](https://github.com/mominkhawaja-codes/rahbar-rag-kubernetes/actions/runs/43062518890),
+commit 07e78ef.
+- **Workload:** the real indexer image (`indexer/Dockerfile`, Tesseract and poppler) on the
+  real corpus, fetched with `corpus/fetch.py` and verified against `corpus/MANIFEST.md`.
+  Every stage ran: 9 documents, 275 pages, **35 pages OCR'd**, 612 chunks, 612 vectors of
+  768 dimensions from `nomic-embed-text` (Ollama 0.5.7), stored in Chroma 1.0.12. 473 s.
+- **Limits as the Job sets them:** 1536 MiB with no swap, 1 CPU, read-only root, `/tmp` on
+  a disk volume, all capabilities dropped, ConfigMap environment (400/50 chunks, OCR on).
+- **Method** (`eval/tools/measure_memory.py`): the container's cgroup v2 accounting, read
+  from the host. It covers every process in the container, not only the Python parent.
+  `memory.peak` is the kernel's exact high-water mark. The other figures are sampled every
+  0.2 s (2365 samples), so a spike shorter than that can be missed.
 
-**When the limit is wrong:** the kernel OOM-kills the container. The pod shows
-`OOMKilled`, exit code **137** (128 + SIGKILL), and Kubernetes restarts it under
-`restartPolicy: OnFailure` up to `backoffLimit: 3`, after which the Job is `Failed`. The
-live index is untouched, because the swap only happens at the end (ADR 0001). Check with
-`kubectl -n rahbar describe pod -l app=indexer | grep -A3 "Last State"`.
+| Measure | MiB |
+| --- | --- |
+| `memory.peak` (high-water mark, includes page cache) | **1129.8** |
+| Working set, `memory.current − inactive_file` (what `kubectl top` reports) | 1117.3 |
+| Anonymous memory (not reclaimable; what gets a container OOM-killed) | 1112.4 |
+| Page cache, at most | 24.9 |
+| Summed RSS of all processes, at its peak | 1156.0 (python 1071, tesseract 85) |
+| Largest single process | python 1093.2 · tesseract 130.5 · pdftoppm 68.1 |
+
+- **Margin:** limit ÷ peak = 1536 ÷ 1129.8 = **1.36×**, 406 MiB (26%) of headroom.
+- **Against the request:** the peak is **2.2× the 512 MiB request**.
+- **Our first sizing argument was wrong.** We had sized the limit for one 300-dpi page in
+  Tesseract (a 2480 × 3508 image, about 25 MB). Tesseract never used more than 131 MiB. The
+  Python process itself reached 1.07 GiB. This run did not record which stage inside Python
+  holds it; the per-sample series is in the run's `indexer-memory` artifact. Plausible
+  causes, not measured: pdfplumber's per-page objects for the image-heavy scanned PDF, and
+  every chunk and vector held in memory until `store` (`indexer/pipeline/run.py:108-111`
+  embeds the whole corpus before storing).
+
+**Are the numbers right?**
+- **The limit is adequate but tight.** 1.36× on one run of this corpus; a larger scanned
+  document would cross it.
+- **The request is too low.** The scheduler reserves 512 MiB for a pod that uses 1.1 GiB, so
+  on a busy node the indexer is the first candidate for eviction under memory pressure
+  (Burstable QoS, usage above request).
+- **Proposed, not applied:** request about **1152 Mi** (the measured peak) and limit about
+  **2048 Mi** (1.8×). This needs agreement before changing the manifests, and the minikube
+  node (6144 MB in `make cluster`) has room for it.
+
+**When the limit is wrong: OOMKilled, exit code 137.**
+- **What happens:** when a container's anonymous memory would exceed its cgroup limit and
+  nothing can be reclaimed, the kernel's OOM killer sends SIGKILL. The container exits with
+  **137** (128 + 9), and Kubernetes records `Last State: Terminated, Reason: OOMKilled,
+  Exit Code: 137`.
+- **We reproduced it** (Docker, not Kubernetes): the same workflow ran the indexer again with
+  its limit cut to **556 MiB**, half the measured anonymous peak. The kernel killed it after
+  15.3 s: exit code 137, `OOMKilled: true`, at `memory.peak` 553.6 MiB. Only `indexer
+  starting` had been logged, so it died while extracting the first document in
+  `_index.json` order, the scanned 2023 rules PDF.
+- **Retries:** with `restartPolicy: OnFailure` (`indexer-job.yaml:20`), the kubelet restarts
+  the container in the same pod with an increasing back-off (10 s, 20 s, 40 s, … up to 5
+  minutes). Failures count against `backoffLimit: 3` (`:11`); once that is exceeded the Job
+  is marked `Failed` (`BackoffLimitExceeded`) and its pod is terminated. `activeDeadlineSeconds:
+  3600` (`:12`) caps the whole Job at an hour. An OOM is deterministic for a given corpus
+  and limit, so the retries fail the same way: the fix is the limit, not a retry. This
+  paragraph is Kubernetes' documented behaviour; we have not observed it on a cluster yet.
+- **The existing Chroma index survives a failed run.** The indexer embeds everything before
+  it writes anything (`run.py:108-111`), then builds `rahbar__staging` and only renames it
+  to `rahbar` at the end (`store.py:73-97`). Measured in the same workflow
+  (`eval/tools/index_state.py`), before and after the OOM-killed run: collections
+  `["rahbar"]`, 612 chunks, `index_id 6d1adb3f2630`, both times. No staging collection was
+  left behind, because the kill came before `store`.
+  - A kill *during* `store` would leave a partial `rahbar__staging`, which the next run
+    drops first (`store.py:75`).
+  - The one unsafe moment is between the two renames (`store.py:93-96`), when no collection
+    is named `rahbar`. A kill there makes the API not ready until the next successful run.
+  - The window lasts as long as two HTTP calls, and we have not provoked it.
+
+**Still pending (needs the live cluster, not yet done):**
+- `kubectl top pod -n rahbar -l app=indexer --containers` during `make index`. Note that
+  metrics-server samples about every 15 s and will usually read below the kernel peak above.
+- `kubectl describe pod` showing a real `OOMKilled` / `137`.
+- The Job's restarts and `BackoffLimitExceeded` on minikube.
 
 ## 5. recall@5 by question type: where is it worst, and why?
 
