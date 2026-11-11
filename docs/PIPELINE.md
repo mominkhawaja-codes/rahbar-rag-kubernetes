@@ -280,6 +280,56 @@ direction, not a significance test.
 **Reproduce:** run the `llm-temperature` workflow, or locally with Ollama and the model:
 `OLLAMA_URL=http://localhost:11434 python eval/temperature_experiment.py --out temperature.json`.
 
+## Real-model evaluation on the real corpus
+
+**Setup:**
+- Workflow `rag-eval`, run
+  [43068217988](https://github.com/mominkhawaja-codes/rahbar-rag-kubernetes/actions/runs/43068217988)
+  (commit 5e05ff3).
+- The real API process, Chroma 1.0.12, Redis 8.8.4, Ollama 0.5.7 with `llama3.2:3b`
+  (temperature 0.2) and `nomic-embed-text`.
+- The real FAST-NUCES corpus indexed by the indexer image: 612 chunks.
+- The unchanged 19-question `eval/golden.yaml`.
+- Semantic cache on at 0.95. 19 misses and 0 hits, so no answer leaked between questions.
+- `LLM_TIMEOUT` 300 s. **These are real-corpus results**; the CI gate's fixture results
+  use stub generation.
+
+**Measured (baseline, before the Task 12 fixes):**
+
+| | Ollama 8 GiB | Ollama 2 GiB |
+| --- | --- | --- |
+| Answerable correct (of 17) | **6** | 0 |
+| Incorrect (answered, expected fact missing) | 2 | 0 |
+| False abstentions | **9** (5 model flag false, 4 all citations rejected) | 17 (all fallbacks) |
+| Must-abstain correctly declined (of 2) | 2 | 2 |
+| recall@3 / recall@5 | 0.941 / 0.941 | 0.941 / 0.941 |
+| Citation validity (citations kept in answers) | 1.0 (8 citations; 3 dropped) | n/a |
+| HTTP errors / timeouts / fallbacks | 0 / 0 / 0 | 0 / 0 / 18 |
+| Duration (19 questions) | 1111 s, 37 to 99 s per question | 76 s |
+
+**Verified causes:**
+- **2 GiB is too little for `llama3.2:3b`.** Docker reports `OOMKilled: true`, Ollama
+  logs "llm server error", and every generation fails with HTTP 500. The API returns its
+  safe fallback, never a 500. The CI overlay's Ollama limit is now 8Gi (commit 3dc697f).
+  The earlier run's HTTP **503s were not reproduced**; their exact cause is still
+  unverified.
+- **False abstentions have two causes:**
+  - the model writes a correct fact but sets `answered_from_context: false` (5);
+  - every citation the model gave fails the citation check (4).
+
+**Fixes in 3dc697f:**
+- Prompt rule 7 defines when `answered_from_context` is true, including answers like "No"
+  or "50%". Rules 1–2 are unchanged. `PROMPT_VERSION` is v4.
+- Rejected citations are now logged next to the passages offered. Citation matching is
+  unchanged.
+
+**The after-fix evaluation was started (run 43074432806) but not recorded before
+submission.** So there is no measured before/after comparison yet, and the fix's effect
+on the 6/17 is unknown.
+
+**Production finding, not changed:** answers took 37–99 s on a CPU runner. The ConfigMap's
+`LLM_TIMEOUT=60` would time out about half of them, so it needs to fit the hardware.
+
 ## Evaluation method
 
 `eval/run_eval.py`, tested in `eval/tests/test_run_eval.py`.
