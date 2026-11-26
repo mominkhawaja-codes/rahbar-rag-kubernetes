@@ -27,6 +27,27 @@ class HostedProviderError(RuntimeError):
     pass
 
 
+class HostedRateLimited(HostedProviderError):
+    """The shared upstream quota is exhausted. Leave retries to a later request."""
+
+
+def _close_schema_objects(schema: dict[str, Any]) -> None:
+    """Adapt the Pydantic schema to strict decoding while keeping nullable fields."""
+    schema.pop("default", None)
+    if schema.get("type") == "object":
+        properties = schema["properties"]
+        schema["additionalProperties"] = False
+        schema["required"] = list(properties)
+        for field in properties.values():
+            _close_schema_objects(field)
+    for definition in schema.get("$defs", {}).values():
+        _close_schema_objects(definition)
+    if "items" in schema:
+        _close_schema_objects(schema["items"])
+    for alternative in schema.get("anyOf", []):
+        _close_schema_objects(alternative)
+
+
 class HostedProvider:
     name = "hosted"
 
@@ -40,8 +61,10 @@ class HostedProvider:
 
     def _response_format(self) -> dict[str, Any]:
         if self.settings.hosted_json_mode == "json_schema":
+            schema = answer_schema()
+            _close_schema_objects(schema)
             return {"type": "json_schema",
-                    "json_schema": {"name": "answer", "schema": answer_schema()}}
+                    "json_schema": {"name": "answer", "strict": True, "schema": schema}}
         return {"type": "json_object"}
 
     def _call(self, messages: list[dict[str, str]]) -> str:
@@ -54,6 +77,8 @@ class HostedProvider:
         headers = {"Authorization": f"Bearer {self.settings.llm_api_key}"}
         response = httpx.post(self.url, json=payload, headers=headers,
                               timeout=self.settings.llm_timeout)
+        if response.status_code == 429:
+            raise HostedRateLimited("hosted LLM rate limit reached (HTTP 429)")
         if response.status_code >= 400:
             # never include the request (it carries the key) in the error
             raise HostedProviderError(f"hosted LLM returned HTTP {response.status_code}")
@@ -64,4 +89,5 @@ class HostedProvider:
         return str(body["choices"][0]["message"]["content"])
 
     def generate(self, question: str, passages: list[Passage]) -> Answer:
-        return generate_with_retry(self._call, question, passages)
+        return generate_with_retry(self._call, question, passages,
+                                   include_schema=self.settings.hosted_json_mode != "json_schema")

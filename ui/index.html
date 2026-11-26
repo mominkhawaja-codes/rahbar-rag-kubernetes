@@ -106,9 +106,15 @@ function renderAnswer(data, cacheHeader) {
   const card = el("article", { class: "a" });
 
   const chips = el("div", { class: "chips" });
-  chips.append(data.answered_from_context
-    ? chip("From the documents", "ok")
-    : chip("Not covered by the documents", "warn"));
+  if (data.outcome === "generation_failed") {
+    chips.append(chip("Answer generation failed", "warn"));
+  } else if (data.outcome === "citation_failed") {
+    chips.append(chip("Citations could not be verified", "warn"));
+  } else {
+    chips.append(data.answered_from_context
+      ? chip("From the documents", "ok")
+      : chip("Not covered by the documents", "warn"));
+  }
   if (data.confidence) chips.append(chip(`confidence: ${data.confidence}`));
   if (data.provider) chips.append(chip(`provider: ${data.provider}`));
   const cached = typeof data.cached === "boolean" ? data.cached

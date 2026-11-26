@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -54,6 +55,49 @@ def test_citation_validity() -> None:
     assert ev.citation_validity({"retrieved": [], "citations": []}) is None
 
 
+@pytest.mark.parametrize(("answer", "found"), [
+    ("The deposit is refundable [A.pdf / Fees [1.1]].", True),
+    ("The deposit is refundable.", False),
+    ("The deposit is refundable [made-up.pdf / Fees [1.1]].", False),
+])
+def test_inline_citation_metric_requires_reference_in_answer_and_retrieval(
+    answer: str, found: bool,
+) -> None:
+    response = {
+        "answer": answer,
+        "retrieved": [ref("a.pdf", "Fees [1.1]")],
+        "citations": [ref("a.pdf", "Fees [1.1]"), ref("made-up.pdf", "Fees [1.1]")],
+    }
+    assert ev.has_inline_citation(response) is found
+
+
+def test_hosted_eval_paces_request_starts(monkeypatch, tmp_path: Path) -> None:
+    now = 100.0
+    starts = []
+
+    def advance(seconds: float) -> None:
+        nonlocal now
+        now += seconds
+
+    def ask(*args, **kwargs) -> dict:
+        starts.append(now)
+        advance(2.0)
+        return {"answered_from_context": False}
+
+    monkeypatch.setattr(ev, "time", SimpleNamespace(perf_counter=lambda: now, sleep=advance))
+    monkeypatch.setattr(ev, "ask", ask)
+    monkeypatch.setattr(ev, "load_golden", lambda path: [
+        {"id": "q1", "question": "First question"},
+        {"id": "q2", "question": "Second question"},
+    ])
+    monkeypatch.setattr(sys, "argv", ["run_eval.py", "--api", "http://example.test",
+                                     "--out", str(tmp_path / "results.json"),
+                                     "--min-request-interval", "15"])
+
+    assert ev.main() == 0
+    assert starts == [100.0, 115.0]
+
+
 def _row(qid: str, qtype: str, answered: bool, retrieved: list[dict], relevant: list[dict],
          citations: list[dict] | None = None, must_abstain: bool = False,
          expect: str | None = None, answer: str = "") -> dict:
@@ -74,6 +118,8 @@ def test_summarise_and_gate_pass_on_a_good_run() -> None:
     results = ev.summarise(rows)
     assert results["recall@5"] == 1.0 and results["recall@5_by_type"] == {"exact": 1.0}
     assert results["citation_validity"] == 1.0
+    assert results["inline_citation_answer_rate"] == 0.0
+    assert results["per_question"][1]["has_inline_citation"] is None
     assert results["abstention_correctness"] == 1.0
     assert results["expect_found_rate"] == 1.0
     assert ev.gate(results, {"recall@5": 0.98}) == []
@@ -94,9 +140,13 @@ def test_gate_fails_on_recall_drop_bad_citations_and_missed_abstention() -> None
     assert any("q2" in f for f in failures)
 
 
-def test_a_failed_request_is_neither_a_correct_nor_a_false_abstention() -> None:
+@pytest.mark.parametrize("failure", [
+    {"error": "HTTPStatusError: 503"}, {"outcome": "generation_failed"},
+    {"outcome": "citation_failed"},
+])
+def test_a_failed_request_is_neither_a_correct_nor_a_false_abstention(failure: dict) -> None:
     error = {"answer": "", "citations": [], "retrieved": [], "answered_from_context": False,
-             "error": "HTTPStatusError: 503"}
+             **failure}
     rows = [
         {"id": "q17", "type": "abstain", "must_abstain": True, "relevant": [], "expect": None,
          "seconds": 0.5, "response": dict(error)},

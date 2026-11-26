@@ -6,7 +6,8 @@
 * `check_citations`: every citation must name a passage the model was actually given.
   Citations are matched on (source, section) after normalising case and spacing; a
   citation whose section is a prefix of exactly one retrieved section is mapped onto
-  it (models often drop the "[5.4-5.6]" suffix). Anything else is dropped. An answer
+  it (models often drop the "[5.4-5.6]" suffix). An exact clause label may also match
+  a unique bracketed suffix in the named source. Anything else is dropped. An answer
   that claims to come from the context but keeps no valid citation is not trusted.
 * `abstention` and `fallback`: the two honest "no" answers.
 """
@@ -22,6 +23,10 @@ ABSTAIN_TEXT = ("I could not find this in the university documents I have, so I 
                 "answer it reliably. Please check with the relevant office.")
 FALLBACK_TEXT = ("I couldn't produce a reliable answer right now. Please try again in a "
                  "moment.")
+
+SENTENCE_BREAK = re.compile(r"(?<!\b[A-Za-z]\.)(?<!\bRs\.)(?<=[.!?])\s+(?=\w)")
+_INLINE_MARKER = re.compile(r"\[([1-9][0-9]{0,2})\]")
+_INLINE_TAIL = re.compile(r"(?P<refs>(?:\s+\[[1-9][0-9]{0,2}\])+)(?P<end>[.!?]?)$")
 
 
 def _norm(text: str) -> str:
@@ -101,6 +106,12 @@ def check_citations(citations: list[Citation], passages: list[Passage]) -> Citat
             prefixed = [p for (src, sec), p in by_key.items()
                         if src == key[0] and sec.startswith(key[1])]
             match = prefixed[0] if len(prefixed) == 1 else None
+        if match is None and re.fullmatch(r"(?:\d+\.)+\d+(?:-(?:\d+\.)+\d+)?", key[1]):
+            suffix = f"[{key[1]}]"
+            targets = {(p.section, p.page): p for p in passages
+                       if _norm(p.source) == key[0] and _norm(p.section).endswith(suffix)}
+            if len(targets) == 1:
+                match = next(iter(targets.values()))
         if match is None:
             dropped += 1
             rejected.append(f"{c.source[:60]} | {c.section[:60]}")
@@ -111,6 +122,32 @@ def check_citations(citations: list[Citation], passages: list[Passage]) -> Citat
         seen.add(canonical)
         valid.append(Citation(source=match.source, section=match.section, page=match.page))
     return CitationCheck(valid=valid, dropped=dropped, rejected=rejected)
+
+
+def render_inline_citations(answer: str, check: CitationCheck,
+                            passages: list[Passage]) -> str | None:
+    """Render verified markers, or attach the verified citations to a sole sentence."""
+    accepted = {(c.source, c.section) for c in check.valid}
+    available = {i: f"[{p.source} / {p.section}]" for i, p in enumerate(passages, 1)
+                 if (p.source, p.section) in accepted}
+    answer_lines = [line.strip() for line in answer.splitlines() if line.strip()]
+    lines = []
+    for line in answer_lines:
+        tail = _INLINE_TAIL.search(line)
+        claim = line[:tail.start()] if tail else line
+        if not claim or "[" in claim or "]" in claim or SENTENCE_BREAK.search(claim):
+            return None
+        if tail is None:
+            if len(answer_lines) != 1 or check.dropped or not check.valid:
+                return None
+            references = " ".join(f"[{c.source} / {c.section}]" for c in check.valid)
+            return f"{claim} {references}"
+        numbers = [int(n) for n in _INLINE_MARKER.findall(tail["refs"])]
+        if any(n not in available for n in numbers):
+            return None
+        refs = dict.fromkeys(available[n] for n in numbers)
+        lines.append(f"{claim} {' '.join(refs)}{tail['end']}")
+    return "\n".join(lines) or None
 
 
 def abstention(reason: str) -> Answer:

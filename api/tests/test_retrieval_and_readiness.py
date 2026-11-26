@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier, Event
 from typing import Any
 
 import pytest
@@ -148,6 +150,38 @@ def test_readyz_checks_redis_when_redis_is_the_cache(client: TestClient) -> None
 def test_liveness_stays_up_when_dependencies_are_down(client: TestClient) -> None:
     swap_state(client, retriever=Unhealthy({"chroma": {"ok": False, "error": "down"}}))
     assert client.get("/healthz").status_code == 200
+
+
+def test_probes_stay_available_with_all_question_slots_busy(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from app.routes import ask
+
+    started = Barrier(3)
+    finish = Event()
+    original = ask.answer_question
+
+    def slow_answer(*args: Any, **kwargs: Any) -> Any:
+        started.wait(timeout=10)
+        assert finish.wait(timeout=10)
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(ask, "answer_question", slow_answer)
+    question = {"question": "What is the attendance rule?"}
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        pending = [pool.submit(client.post, "/api/ask", json=question) for _ in range(2)]
+        try:
+            started.wait(timeout=10)
+            busy = client.post("/api/ask", json=question)
+            assert busy.status_code == 429
+            assert busy.headers["Retry-After"] == "5"
+            assert client.get("/healthz").status_code == 200
+            assert client.get("/readyz").status_code == 200
+        finally:
+            finish.set()
+        assert all(response.result(timeout=10).status_code == 200 for response in pending)
+    monkeypatch.setattr(ask, "answer_question", original)
+    assert client.post("/api/ask", json=question).status_code == 200
 
 
 def test_ask_answers_503_not_500_on_a_dependency_failure(client: TestClient) -> None:

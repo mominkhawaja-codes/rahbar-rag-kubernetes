@@ -1,5 +1,5 @@
-# minikube: images built locally and loaded with `make images` (tag dev); the LLM and
-# embeddings come from Ollama on the laptop (OLLAMA_HOST=0.0.0.0 ollama serve).
+# Minikube uses Groq for generation and host Ollama for local embeddings.
+# The API reads LLM_API_KEY from rahbar-secret.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
@@ -11,5 +11,62 @@ images:
 patches:
   - target: {kind: ConfigMap, name: rahbar-config}
     patch: |-
-      - {op: replace, path: /data/LLM_PROVIDER, value: ollama-host}
+      - {op: replace, path: /data/LLM_PROVIDER, value: hosted}
+      - {op: replace, path: /data/HOSTED_BASE_URL, value: "https://api.groq.com/openai/v1"}
+      - {op: replace, path: /data/LLM_MODEL, value: "openai/gpt-oss-20b"}
+      - {op: replace, path: /data/HOSTED_JSON_MODE, value: json_schema}
       - {op: replace, path: /data/OLLAMA_URL, value: "http://host.minikube.internal:11434"}
+      # Host inference shares the Windows machine with Docker and the Kubernetes node.
+      - {op: add, path: /data/OLLAMA_NUM_THREADS, value: "2"}
+      - {op: replace, path: /data/LLM_TIMEOUT, value: "45"}
+  - target: {kind: Deployment, name: api}
+    patch: |-
+      # Allow cold startup on Windows while Docker and the control plane share CPU.
+      - {op: replace, path: /spec/template/spec/containers/0/startupProbe/periodSeconds, value: 5}
+      - {op: replace, path: /spec/template/spec/containers/0/startupProbe/failureThreshold, value: 60}
+  - target: {kind: Deployment, name: api}
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: api
+      spec:
+        template:
+          spec:
+            containers:
+              - name: api
+                env:
+                  - {name: CHROMA_COLLECTION, value: rahbar-fast-public}
+  - target: {kind: Job, name: indexer}
+    patch: |-
+      apiVersion: batch/v1
+      kind: Job
+      metadata:
+        name: indexer
+      spec:
+        template:
+          spec:
+            containers:
+              - name: indexer
+                env:
+                  - {name: CHROMA_COLLECTION, value: rahbar-fast-public}
+                  - {name: CORPUS_DIR, value: /corpus}
+  - target: {kind: CronJob, name: reindex}
+    patch: |-
+      apiVersion: batch/v1
+      kind: CronJob
+      metadata:
+        name: reindex
+      spec:
+        jobTemplate:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: indexer
+                    env:
+                      - {name: CHROMA_COLLECTION, value: rahbar-fast-public}
+                      - {name: CORPUS_DIR, value: /corpus}
+  - target: {kind: Deployment, name: ui}
+    patch: |-
+      - {op: replace, path: /spec/replicas, value: 1}

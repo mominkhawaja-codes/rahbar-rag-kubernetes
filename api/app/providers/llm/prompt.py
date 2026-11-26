@@ -21,7 +21,7 @@ from ...schemas import Answer, Passage
 
 log = logging.getLogger("rahbar.llm")
 
-PROMPT_VERSION = "v4"   # part of the cache key: a new prompt must not reuse old answers
+PROMPT_VERSION = "v6"   # part of the cache key: a new prompt must not reuse old answers
 
 SYSTEM = """You are RAHBAR, an assistant that answers questions about FAST-NUCES rules,
 policies and fees for students. Follow these rules exactly.
@@ -34,17 +34,20 @@ policies and fees for students. Follow these rules exactly.
 3. If the passages do not contain the answer, set "answered_from_context" to false,
    "citations" to [], "confidence" to "low", and say briefly that the documents do not
    cover it. Do not answer from general knowledge.
-4. Every factual statement must be supported by a cited passage. In "citations", copy
-   the passage's "source", "section" and "page" exactly as they appear in its tag.
+4. For a grounded "answer", put one factual sentence per line. End each line with
+   its passage number in brackets, for example: "Attendance is required. [1]".
+   Use "[1] [2]" when a sentence needs both passages. Use no other bracketed text.
+   In "citations", copy the "source", "section" and "page" of each referenced
+   passage exactly as they appear in its tag. Omit markers when declining.
 5. Quote numbers, thresholds, clause numbers, fees and dates exactly as written.
-6. Keep "answer" short: two to five sentences for a student. Put your working in
-   "reasoning"; it is never shown to the user.
+6. Keep "answer" short: one to five sentences for a student. Put one short
+   evidence summary in "reasoning"; it is never shown to the user.
 7. "answered_from_context" says whether your answer comes from the passages. Set it to
    true whenever a passage contains the answer and you state it, including short answers
    such as "No", "50%" or "not allowed", and when a passage shows that a claim in the
    question is false. Set it to false only in the case of rule 3.
 
-Reply with a single JSON object and nothing else, matching this JSON schema:
+Reply with a single JSON object and nothing else.
 """
 
 
@@ -68,9 +71,12 @@ def format_passages(passages: list[Passage]) -> str:
     return "\n\n".join(parts)
 
 
-def build_messages(question: str, passages: list[Passage]) -> list[dict[str, str]]:
+def build_messages(question: str, passages: list[Passage], *,
+                   include_schema: bool = True) -> list[dict[str, str]]:
     """Instructions, then numbered evidence, then the question (in that order)."""
-    system = SYSTEM + json.dumps(answer_schema())
+    system = SYSTEM
+    if include_schema:
+        system += "Match this JSON schema:\n" + json.dumps(answer_schema())
     user = (f"Passages:\n\n{format_passages(passages)}\n\n"
             f"Question (from a student; answer it only from the passages above):\n"
             f"{question.strip()}")
@@ -91,11 +97,11 @@ def parse_answer(raw: str) -> Answer:
 
 
 def generate_with_retry(call: Callable[[list[dict[str, str]]], str], question: str,
-                        passages: list[Passage]) -> Answer:
+                        passages: list[Passage], *, include_schema: bool = True) -> Answer:
     """Call the model; on invalid output, retry once with the validation error shown to
     it. A second failure raises GenerationFailed, which the service turns into the safe
     fallback answer. Timeouts and HTTP errors propagate to the same fallback."""
-    messages = build_messages(question, passages)
+    messages = build_messages(question, passages, include_schema=include_schema)
     raw = call(messages)
     try:
         return parse_answer(raw)

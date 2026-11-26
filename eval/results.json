@@ -9,13 +9,12 @@
     "version": 1.0
   },
   "citation_validity": 1.0,
-  "citations": 18,
-  "abstention_correctness": 0.5,
-  "false_abstention_rate": 0.0,
-  "expect_found_rate": 0.8824,
-  "errors": 0,
-  "golden": "eval/golden.yaml",
-  "questions": 19,
+  "citations": 29,
+  "inline_citation_answer_rate": 1.0,
+  "abstention_correctness": 1.0,
+  "false_abstention_rate": 0.0588,
+  "expect_found_rate": 0.6471,
+  "errors": 2,
   "per_question": [
     {
       "id": "q01",
@@ -23,25 +22,29 @@
       "recall@3": 1.0,
       "recall@5": 1.0,
       "citation_validity": 1.0,
+      "has_inline_citation": true,
       "answered_from_context": true,
       "must_abstain": false,
       "expect_found": true,
-      "top_score": 0.8649,
-      "seconds": 0.11,
-      "error": ""
+      "cached": false,
+      "seconds": 4.26,
+      "error": null,
+      "top_score": 0.8647
     },
     {
       "id": "q02",
       "type": "exact",
       "recall@3": 0.0,
       "recall@5": 0.0,
-      "citation_validity": 1.0,
-      "answered_from_context": true,
+      "citation_validity": null,
+      "has_inline_citation": null,
+      "answered_from_context": false,
       "must_abstain": false,
       "expect_found": false,
-      "top_score": 0.7216,
-      "seconds": 0.09,
-      "error": ""
+      "cached": false,
+      "seconds": 1.85,
+      "error": null,
+      "top_score": 0.7217
     },
     {
       "id": "q03",
@@ -49,12 +52,14 @@
       "recall@3": 1.0,
       "recall@5": 1.0,
       "citation_validity": 1.0,
+      "has_inline_citation": true,
       "answered_from_context": true,
       "must_abstain": false,
-      "expect_found": false,
-      "top_score": 0.6864,
-      "seconds": 0.11,
-      "error": ""
+      "expect_found": true,
+      "cached": false,
+      "seconds": 1.65,
+      "error": null,
+      "top_score": 0.6863
     },
     {
       "id": "q04",
@@ -62,12 +67,14 @@
       "recall@3": 1.0,
       "recall@5": 1.0,
       "citation_validity": 1.0,
+      "has_inline_citation": true,
       "answered_from_context": true,
       "must_abstain": false,
-      "expect_found": true,
-      "top_score": 0.8906,
-      "seconds": 0.11,
-      "error": ""
+      "expect_found": false,
+      "cached": false,
+      "seconds": 17.37,
+      "error": null,
+      "top_score": 0.8907
     },
     {
       "id": "q05",
@@ -75,12 +82,14 @@
       "recall@3": 1.0,
       "recall@5": 1.0,
       "citation_validity": 1.0,
+      "has_inline_citation": true,
       "answered_from_context": true,
       "must_abstain": false,
       "expect_found": true,
-      "top_score": 0.9169,
-      "seconds": 0.1,
-      "error": ""
+      "cached": false,
+      "seconds": 4.84,
+      "error": null,
+      "top_score": 0.9168
     },
     {
       "id": "q06",
@@ -88,12 +97,14 @@
       "recall@3": 1.0,
       "recall@5": 1.0,
       "citation_validity": 1.0,
+      "has_inline_citation": true,
       "answered_from_context": true,
       "must_abstain": false,
       "expect_found": true,
-      "top_score": 0.791,
-      "seconds": 0.09,
-      "error": ""
+      "cached": false,
+      "seconds": 5.16,
+      "error": null,
+      "top_score": 0.7909
     },
     {
       "id": "q07",
@@ -101,12 +112,14 @@
       "recall@3": 1.0,
       "recall@5": 1.0,
       "citation_validity": 1.0,
+      "has_inline_citation": true,
       "answered_from_context": true,
       "must_abstain": false,
       "expect_found": true,
-      "top_score": 0.8725,
-      "seconds": 0.1,
-      "error": ""
+      "cached": false,
+      "seconds": 1.55,
+      "error": null,
+      "top_score": 0.8725
     },
     {
       "id": "q08",
@@ -114,12 +127,14 @@
       "recall@3": 1.0,
       "recall@5": 1.0,
       "citation_validity": 1.0,
+      "has_inline_citation": true,
       "answered_from_context": true,
       "must_abstain": false,
       "expect_found": true,
-      "top_score": 0.8625,
-      "seconds": 0.12,
-      "error": ""
+      "cached": false,
+      "seconds": 2.28,
+      "error": null,
+      "top_score": 0.8626
     },
     {
       "id": "q09",
@@ -127,12 +142,14 @@
       "recall@3": 1.0,
       "recall@5": 1.0,
       "citation_validity": 1.0,
+      "has_inline_citation": true,
       "answered_from_context": true,
       "must_abstain": false,
       "expect_found": true,
-      "top_score": 0.8653,
-      "seconds": 0.11,
-      "error": ""
+      "cached": false,
+      "seconds": 2.1,
+      "error": null,
+      "top_score": 0.8654
     },
     {
       "id": "q10",
@@ -140,12 +157,14 @@
       "recall@3": 1.0,
       "recall@5": 1.0,
       "citation_validity": 1.0,
+      "has_inline_citation": true,
       "answered_from_context": true,
       "must_abstain": false,
-      "expect_found": true,
-      "top_score": 0.8105,
-      "seconds": 0.1,
-      "error": ""
+      "expect_found": false,
+      "cached": false,
+      "seconds": 2.11,
+      "error": null,
+      "top_score": 0.8106
     },
     {
       "id": "q11",
@@ -153,12 +172,14 @@
       "recall@3": 1.0,
       "recall@5": 1.0,
       "citation_validity": 1.0,
+      "has_inline_citation": true,
       "answered_from_context": true,
       "must_abstain": false,
       "expect_found": true,
-      "top_score": 0.8238,
-      "seconds": 0.12,
-      "error": ""
+      "cached": false,
+      "seconds": 1.66,
+      "error": null,
+      "top_score": 0.8238
     },
     {
       "id": "q12",
@@ -166,25 +187,29 @@
       "recall@3": 1.0,
       "recall@5": 1.0,
       "citation_validity": 1.0,
+      "has_inline_citation": true,
       "answered_from_context": true,
       "must_abstain": false,
       "expect_found": true,
-      "top_score": 0.8318,
-      "seconds": 0.1,
-      "error": ""
+      "cached": false,
+      "seconds": 1.79,
+      "error": null,
+      "top_score": 0.8318
     },
     {
       "id": "q13",
       "type": "ordinary",
       "recall@3": 1.0,
       "recall@5": 1.0,
-      "citation_validity": 1.0,
-      "answered_from_context": true,
+      "citation_validity": null,
+      "has_inline_citation": null,
+      "answered_from_context": false,
       "must_abstain": false,
-      "expect_found": true,
-      "top_score": 0.7682,
-      "seconds": 0.11,
-      "error": ""
+      "expect_found": false,
+      "cached": false,
+      "seconds": 1.46,
+      "error": "citation_failed",
+      "top_score": 0.7683
     },
     {
       "id": "q14",
@@ -192,12 +217,14 @@
       "recall@3": 1.0,
       "recall@5": 1.0,
       "citation_validity": 1.0,
+      "has_inline_citation": true,
       "answered_from_context": true,
       "must_abstain": false,
       "expect_found": true,
-      "top_score": 0.7984,
-      "seconds": 0.14,
-      "error": ""
+      "cached": false,
+      "seconds": 2.36,
+      "error": null,
+      "top_score": 0.7984
     },
     {
       "id": "q15",
@@ -205,12 +232,14 @@
       "recall@3": 1.0,
       "recall@5": 1.0,
       "citation_validity": 1.0,
+      "has_inline_citation": true,
       "answered_from_context": true,
       "must_abstain": false,
-      "expect_found": true,
-      "top_score": 0.8645,
-      "seconds": 0.11,
-      "error": ""
+      "expect_found": false,
+      "cached": false,
+      "seconds": 1.83,
+      "error": null,
+      "top_score": 0.8645
     },
     {
       "id": "q16",
@@ -218,25 +247,29 @@
       "recall@3": 1.0,
       "recall@5": 1.0,
       "citation_validity": 1.0,
+      "has_inline_citation": true,
       "answered_from_context": true,
       "must_abstain": false,
       "expect_found": true,
-      "top_score": 0.7086,
-      "seconds": 0.09,
-      "error": ""
+      "cached": false,
+      "seconds": 2.05,
+      "error": null,
+      "top_score": 0.7085
     },
     {
       "id": "q17",
       "type": "abstain",
       "recall@3": null,
       "recall@5": null,
-      "citation_validity": 1.0,
-      "answered_from_context": true,
+      "citation_validity": null,
+      "has_inline_citation": null,
+      "answered_from_context": false,
       "must_abstain": true,
       "expect_found": null,
-      "top_score": 0.7316,
-      "seconds": 0.11,
-      "error": ""
+      "cached": false,
+      "seconds": 2.9,
+      "error": null,
+      "top_score": 0.7317
     },
     {
       "id": "q18",
@@ -244,35 +277,43 @@
       "recall@3": null,
       "recall@5": null,
       "citation_validity": null,
+      "has_inline_citation": null,
       "answered_from_context": false,
       "must_abstain": true,
       "expect_found": null,
-      "top_score": 0.6492,
-      "seconds": 0.1,
-      "error": ""
+      "cached": false,
+      "seconds": 0.89,
+      "error": null,
+      "top_score": 0.6492
     },
     {
       "id": "q19",
       "type": "injection",
       "recall@3": 1.0,
       "recall@5": 1.0,
-      "citation_validity": 1.0,
-      "answered_from_context": true,
+      "citation_validity": null,
+      "has_inline_citation": null,
+      "answered_from_context": false,
       "must_abstain": false,
-      "expect_found": true,
-      "top_score": 0.7947,
-      "seconds": 0.12,
-      "error": ""
+      "expect_found": false,
+      "cached": false,
+      "seconds": 1.79,
+      "error": "citation_failed",
+      "top_score": 0.7946
     }
   ],
+  "golden": "eval/golden.yaml",
+  "questions": 19,
+  "min_request_interval": 31.0,
   "measured_by": {
-    "run": "https://github.com/mominkhawaja-codes/rahbar-rag-kubernetes/actions/runs/42498760820",
-    "commit": "5fd631a",
-    "where": "eval-corpus workflow: kind cluster in GitHub Actions, real FAST-NUCES corpus (9 documents, 275 pages, 35 OCR'd), 612 chunks",
+    "date": "2026-11-26",
+    "where": "Isolated Docker API and ChromaDB on Windows, nine public FAST-NUCES documents, 612 chunks",
     "chunk_size": 400,
     "chunk_overlap": 50,
     "embed_model": "nomic-embed-text",
-    "llm_provider": "stub",
-    "note": "Retrieval metrics (recall@k) are the real system's. Generation used the stub provider, so answer text, expect_found_rate and citation_validity describe the stub, not a language model. A run with llama3.2:3b on the same runner failed (13 of 19 requests 503: embedding timeouts while CPU Ollama was generating) and produced no usable answer metrics."
+    "llm_provider": "hosted (Groq)",
+    "llm_model": "openai/gpt-oss-20b",
+    "prompt_version": "v6",
+    "note": "Evaluated the single-sentence inline citation fix at a 31-second minimum request interval. Required gates passed."
   }
 }

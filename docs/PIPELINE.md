@@ -166,14 +166,19 @@ in one chunk.
 
 ## Semantic cache
 
-`api/app/services/cache.py` (Redis on the cluster, ADR 0003). A hit is a stored question
-whose embedding has cosine similarity ≥ `CACHE_THRESHOLD` with the new one. An exact
-normalised match is found first, by key. Entries live under a generation made of the
-index id, the embedding model, the provider and model, the prompt version and the floor,
-so a re-index starts a fresh cache. Never cached: abstentions, fallbacks, answers without
-a valid citation, and follow-ups ("what about MS?").
+`api/app/services/cache.py` (Redis on the cluster, ADR 0003) finds exact normalised
+matches by key. Semantic reuse requires an explicitly recognised equivalent intent and
+canonical embeddings with cosine similarity ≥ `CACHE_THRESHOLD` (0.95). The reviewed
+academic-warning phrasings preserve the distinction between triggering a warning and
+the minimum needed to avoid one. Other phrasings use exact matching. The generation
+includes the index id, embedding model, provider and model, prompt version, cache policy
+version and relevance floor. Abstentions, fallbacks, uncited answers and follow-ups
+are excluded.
 
-**Threshold: 0.95, measured.** `eval/cache_threshold.py` embeds 25 labelled question pairs
+The expanded experiment found zero false hits with the guard at 0.95 across 32 labelled
+pairs (30 lookups and two follow-up bypass checks). See ADR 0003 for the comparison.
+
+**Original cosine-only measurement.** `eval/cache_threshold.py` embedded 25 labelled question pairs
 (`eval/cache_pairs.yaml`, written from the corpus before measuring) with the API's own
 `OllamaEmbedder`, i.e. `nomic-embed-text` with the `search_query:` prefix, and counts what
 each threshold would do. Run `cache-threshold`
@@ -204,7 +209,8 @@ pairs are not measured: they never reach the cache.
 - **What this costs:** at any zero-false-hit threshold only the 2 exact or normalised repeats
   hit; all 8 genuine paraphrases miss (their similarities are 0.735 to 0.939). With this
   model, same-answer paraphrases and different-answer near misses overlap, so a similarity
-  threshold cannot separate them. The cache is safe, and in practice serves repeats.
+  threshold cannot separate them. The later above/below regression confirmed that even
+  highly similar questions can need different answers.
 - **Checked against a real `RedisCache`** at 0.94 and 0.95: 23 of 23 lookups match the
   computed decision; an entry stored under one index generation is a miss under the next
   (re-index invalidation); an abstention and both follow-ups are refused by
@@ -329,6 +335,55 @@ on the 6/17 is unknown.
 
 **Production finding, not changed:** answers took 37–99 s on a CPU runner. The ConfigMap's
 `LLM_TIMEOUT=60` would time out about half of them, so it needs to fit the hardware.
+
+## Isolated evaluation on Windows
+
+For the stabilization check on 25 Nov 2026, a temporary Docker network supplied its own
+ChromaDB and API. The API used the existing `nomic-embed-text` model on the Windows host,
+and cached answers were disabled in the temporary API. The Kubernetes fixture deployment
+and its storage were separate from both runs. The nine public downloads matched the
+committed corpus manifest, which the `eval-corpus` workflow now checks after fetching.
+
+The CI fixture golden set passed in this setup with the stub provider. All six questions
+met the gate, with recall@3, recall@5, citation validity and abstention correctness of
+100%, plus zero request errors. This checks the fixture evaluator and retrieval path.
+The GitHub kind and image-scanning jobs run separately.
+
+The public FAST run indexed 612 chunks from 275 extracted pages, including 35 OCR pages,
+at the shipped chunk setting of 400 words with 50 words of overlap. Groq used
+`openai/gpt-oss-20b` for generation. Recall@3 and recall@5 were both **94.12%**. The
+clause 1.21 query (`q02`) remained the retrieval miss. All eight structured citations
+matched retrieved passages.
+
+The hosted run failed the abstention gate at **50%**. Groq returned HTTP 429 for 13 of
+18 provider calls. One was `q17`, which returned a generation fallback and counted as an
+error. The API declined `q18` before calling Groq. The burst provides incomplete
+generation-quality evidence. For a hosted rerun, set `--min-request-interval` in seconds
+according to the available provider quota and keep the temporary index for related runs.
+The flag is optional and leaves the stub CI run and API behavior unchanged. The gated
+baseline JSON remains unchanged.
+
+The evaluator reports `inline_citation_answer_rate` separately from citation validity.
+The former counts answers that contain at least one bracketed `[source / section]`
+reference backed by their citation list and retrieved passages. A positive result alone
+does not establish that every factual sentence is cited. The fixture stub returned
+structured citations in five responses and no bracketed inline references. The four
+grounded answers in that Groq run also had zero bracketed inline references.
+
+Prompt v6 uses one factual sentence per line with numbered passage markers. The API
+resolves those markers to canonical `[source / section]` references after the existing
+source and section validation. A single unmarked sentence can use its structured
+references when every supplied citation passes validation. Multi-sentence answers
+require explicit verified markers. The structured Sources list is still available.
+The prompt version changes the cache namespace so cached answers follow the same format.
+
+The paced Groq run on 26 Nov 2026 passed the required gates at a 31-second minimum
+request interval. Recall@5 was 94.12%, both required abstentions passed, and all 29
+emitted citations were valid. All 14 grounded answers had inline citations. Two
+requests failed inline citation validation (`q13`, `q19`). Clause 1.21 (`q02`) remained
+the only top-five retrieval miss. The expected text matched in 11 of 17 answerable
+questions. Three other grounded answers had no expected-text match.
+The full measured result is in [`eval/results.json`](../eval/results.json).
 
 ## Evaluation method
 

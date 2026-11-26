@@ -41,10 +41,11 @@ class Settings:
     temperature: float = 0.2
     llm_model: str = "llama3.2:3b"
     ollama_url: str = "http://host.minikube.internal:11434"
+    ollama_num_threads: int = 0     # zero lets Ollama choose
     hosted_base_url: str = ""        # e.g. an OpenAI-compatible endpoint
     hosted_json_mode: str = "json_object"   # HOSTED_JSON_MODE: json_object | json_schema
     llm_api_key: str = field(default="", repr=False)   # from the Secret; never log it
-    llm_timeout: float = 60.0        # LLM_TIMEOUT seconds, per attempt
+    llm_timeout: float = 60.0        # Ollama shares this budget across validation attempts
     embed_timeout: float = 20.0      # EMBED_TIMEOUT seconds
 
     # Grounding (section 3.4): passages below the floor are never shown to the model;
@@ -73,6 +74,7 @@ def get_settings() -> Settings:
         temperature=_float("TEMPERATURE", 0.2),
         llm_model=os.environ.get("LLM_MODEL", "llama3.2:3b"),
         ollama_url=os.environ.get("OLLAMA_URL", "http://host.minikube.internal:11434"),
+        ollama_num_threads=_int("OLLAMA_NUM_THREADS", 0),
         hosted_base_url=os.environ.get("HOSTED_BASE_URL", ""),
         hosted_json_mode=os.environ.get("HOSTED_JSON_MODE", "json_object"),
         llm_api_key=os.environ.get("LLM_API_KEY", ""),
