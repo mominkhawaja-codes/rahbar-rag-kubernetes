@@ -62,6 +62,7 @@ class AskResponse(BaseModel):
     confidence: Literal["high", "medium", "low"]
     retrieved: list[RetrievedRef]
     provider: str
+    outcome: Literal["answered", "abstained", "generation_failed", "citation_failed"] | None = None
     # Added (ADR 0003): true when the answer came from the semantic cache. Optional with
     # a default, so every client written against the starter contract still validates.
     cached: bool = False

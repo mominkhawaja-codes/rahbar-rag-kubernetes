@@ -1,12 +1,12 @@
 # /api goes to the api Service unchanged (the routes keep the /api prefix); everything
-# else goes to the ui. Generation can take tens of seconds, hence the read timeout.
+# else goes to the ui. The read timeout leaves room for retrieval and CPU generation.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: rahbar
   namespace: rahbar
   annotations:
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "420"
     nginx.ingress.kubernetes.io/proxy-body-size: "16k"
 spec:
   ingressClassName: nginx

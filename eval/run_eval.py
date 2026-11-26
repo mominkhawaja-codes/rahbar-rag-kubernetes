@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 import sys
 import time
@@ -97,17 +98,30 @@ def recall_at_k(relevant: list[dict], retrieved: list[dict], k: int) -> float | 
     return sum(1 for rel in relevant if _found(rel, top)) / len(relevant)
 
 
+def _reference_key(reference: dict) -> tuple[str, str]:
+    return _norm(reference.get("source") or ""), _norm(reference.get("section") or "")
+
+
 def citation_validity(response: dict) -> float | None:
     """Fraction of the response's citations that match a passage in response['retrieved'].
     Return None when there are no citations."""
     citations = response.get("citations") or []
     if not citations:
         return None
-    retrieved = {(_norm(p.get("source", "")), _norm(p.get("section", "")))
-                 for p in response.get("retrieved") or []}
-    valid = sum(1 for c in citations
-                if (_norm(c.get("source", "")), _norm(c.get("section", ""))) in retrieved)
+    retrieved = {_reference_key(p) for p in response.get("retrieved") or []}
+    valid = sum(1 for c in citations if _reference_key(c) in retrieved)
     return valid / len(citations)
+
+
+def has_inline_citation(response: dict) -> bool:
+    """Detect a bracketed reference in the answer that also matches a retrieved passage."""
+    answer = _norm(response.get("answer") or "")
+    retrieved = {_reference_key(p) for p in response.get("retrieved") or []}
+    for citation in response.get("citations") or []:
+        source, section = _reference_key(citation)
+        if source and section and (source, section) in retrieved and f"[{source} / {section}]" in answer:
+            return True
+    return False
 
 
 def _mean(values: list[float]) -> float | None:
@@ -125,6 +139,7 @@ def summarise(rows: list[dict]) -> dict:
     per_question = []
     r3, r5, by_type = [], [], {}
     cited = valid_cited = 0
+    inline_cited: list[float] = []
     abstain_ok = abstain_total = 0
     false_abstain = answerable = 0
     expect_hits = expect_total = 0
@@ -144,10 +159,16 @@ def summarise(rows: list[dict]) -> dict:
             cited += n_cit
             valid_cited += round(validity * n_cit)
         answered = bool(resp.get("answered_from_context"))
+        inline = has_inline_citation(resp) if answered else None
+        if inline is not None:
+            inline_cited.append(float(inline))
         # A request that failed (HTTP error, timeout) is neither a correct abstention nor a
         # false one: it did not answer at all. Counting it as "declined" would score an
         # outage as honest refusal.
-        failed = bool(resp.get("error"))
+        error = resp.get("error")
+        if resp.get("outcome") in ("generation_failed", "citation_failed"):
+            error = error or resp["outcome"]
+        failed = bool(error)
         if row["must_abstain"]:
             abstain_total += 1
             abstain_ok += int(not answered and not failed)
@@ -161,10 +182,11 @@ def summarise(rows: list[dict]) -> dict:
             expect_hits += int(bool(hit))
         per_question.append({
             "id": row["id"], "type": row["type"], "recall@3": rec3, "recall@5": rec5,
-            "citation_validity": validity, "answered_from_context": answered,
+            "citation_validity": validity, "has_inline_citation": inline,
+            "answered_from_context": answered,
             "must_abstain": row["must_abstain"], "expect_found": hit,
             "cached": bool(resp.get("cached")), "seconds": row.get("seconds"),
-            "error": resp.get("error"),
+            "error": error,
             "top_score": retrieved[0]["score"] if retrieved else None,
         })
     return {
@@ -173,6 +195,7 @@ def summarise(rows: list[dict]) -> dict:
         "recall@5_by_type": {t: _mean(v) for t, v in sorted(by_type.items())},
         "citation_validity": round(valid_cited / cited, 4) if cited else None,
         "citations": cited,
+        "inline_citation_answer_rate": _mean(inline_cited),
         "abstention_correctness": round(abstain_ok / abstain_total, 4) if abstain_total else None,
         "false_abstention_rate": round(false_abstain / answerable, 4) if answerable else None,
         "expect_found_rate": round(expect_hits / expect_total, 4) if expect_total else None,
@@ -213,16 +236,25 @@ def main() -> int:
     parser.add_argument("--out", type=Path, default=HERE / "results.json")
     parser.add_argument("--timeout", type=float, default=120.0,
                         help="seconds per question; raise it for a slow CPU-only model")
+    parser.add_argument("--min-request-interval", type=float, default=0.0,
+                        help="minimum seconds between request starts, for hosted provider quotas")
     parser.add_argument("--update-baseline", action="store_true",
                         help="write these results as the new baseline")
     args = parser.parse_args()
+    if not math.isfinite(args.min_request_interval) or args.min_request_interval < 0:
+        parser.error("--min-request-interval must be a finite non-negative number")
 
     questions = load_golden(args.golden)
     rows = []
     headers = {"Host": args.host} if args.host else {}
+    next_request_at = time.perf_counter()
     with httpx.Client(timeout=args.timeout, headers=headers) as client:
         for q in questions:
+            delay = next_request_at - time.perf_counter()
+            if delay > 0:
+                time.sleep(delay)
             started = time.perf_counter()
+            next_request_at = started + args.min_request_interval
             try:
                 response = ask(client, args.api, q["question"], request_id=str(q["id"]))
             except httpx.HTTPError as exc:
@@ -251,6 +283,7 @@ def main() -> int:
 
     results["golden"] = str(args.golden)
     results["questions"] = len(rows)
+    results["min_request_interval"] = args.min_request_interval
     args.out.write_text(json.dumps(results, indent=2), encoding="utf-8")
     print(f"\nresults written to {args.out}")
     if args.update_baseline:

@@ -21,7 +21,7 @@ from app.services.cache import MemoryCache
 
 P = passage(1, 0.9, source="rules.pdf", section="Academic Warning [5.4]",
             text="5.4 Minimum CGPA required to avoid academic warning is 2.00.")
-VALID = json.dumps({"reasoning": "r", "answer": "2.00.", "answered_from_context": True,
+VALID = json.dumps({"reasoning": "r", "answer": "2.00. [1]", "answered_from_context": True,
                     "confidence": "high", "citations": [
                         {"source": P.source, "section": P.section, "page": P.page}]})
 QUESTION = "What CGPA avoids academic warning?"

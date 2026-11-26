@@ -1,4 +1,4 @@
-# ADR 0004: LLM provider: Ollama by default, a hosted API behind one interface, no PII sent
+# ADR 0004: Hosted generation, local embeddings, and data handling
 
 ## Status
 Accepted · 8 Nov 2026
@@ -14,9 +14,10 @@ would receive whatever we send it.
   (`api/app/providers/llm/base.py`), with four implementations chosen by `LLM_PROVIDER`:
   `stub` (tests and CI; deterministic, no network), `ollama-host` and `ollama-incluster`
   (`ollama.py`), and `hosted` for any OpenAI-compatible endpoint, e.g. Groq (`hosted.py`).
-- **Default for dev: Ollama on the host** with `llama3.2:3b`. Ollama's `format` parameter
-  takes the `Answer` JSON schema, so decoding is constrained to the contract.
-- **Hosted** sends `response_format` (`json_object`, or `json_schema` with
+- **Default for dev:** Groq generates with `openai/gpt-oss-20b`. Host Ollama still runs
+  the pinned `nomic-embed-text` model for indexing and query embeddings.
+  Local generation with `llama3.2:3b` remains selectable on the API Deployment.
+- **Hosted** sends `response_format` (`json_object` or strict `json_schema` with
   `HOSTED_JSON_MODE=json_schema`). The key comes only from the `rahbar-secret` Secret,
   created with `make secret` from an environment variable. It never appears in a file, in
   `Settings.__repr__`, or in an error message (`HostedProviderError` carries only the

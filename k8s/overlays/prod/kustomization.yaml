@@ -14,7 +14,8 @@ patches:
     patch: |-
       - {op: replace, path: /data/LLM_PROVIDER, value: hosted}
       - {op: replace, path: /data/HOSTED_BASE_URL, value: "https://api.groq.com/openai/v1"}
-      - {op: replace, path: /data/LLM_MODEL, value: "llama-3.1-8b-instant"}
+      - {op: replace, path: /data/LLM_MODEL, value: "openai/gpt-oss-20b"}
+      - {op: replace, path: /data/HOSTED_JSON_MODE, value: json_schema}
       - {op: replace, path: /data/LOG_LEVEL, value: WARNING}
   - target: {kind: Deployment, name: api}
     patch: |-

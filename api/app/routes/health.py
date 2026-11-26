@@ -19,7 +19,7 @@ log = logging.getLogger("rahbar.health")
 
 
 @router.get("/healthz")
-def healthz() -> dict[str, str]:
+async def healthz() -> dict[str, str]:
     """Is the process alive? Must never touch Chroma, Redis or the LLM."""
     return {"status": "alive"}
 

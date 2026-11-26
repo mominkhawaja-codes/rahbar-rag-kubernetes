@@ -20,6 +20,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import time
+from typing import Literal
 
 from ..config import Settings
 from ..embeddings import Embedder, HashEmbedder
@@ -31,9 +32,10 @@ from ..providers.llm.usage import TokenUsage, usage_var
 from ..retrieval.base import Retriever
 from ..routes import metrics
 from ..schemas import Answer, AskResponse, Passage, RetrievedRef
-from .cache import NullCache, SemanticCache, is_followup, should_cache
+from .cache import (SEMANTIC_CACHE_POLICY, NullCache, SemanticCache, is_followup,
+                    semantic_cache_intent, should_cache)
 from .grounding import (abstention, apply_relevance_floor, check_citations, fallback,
-                        has_lexical_support)
+                        has_lexical_support, render_inline_citations)
 
 log = logging.getLogger("rahbar.answer")
 
@@ -44,7 +46,10 @@ def cache_generation(retriever: Retriever, provider: LLMProvider, settings: Sett
     """Everything that changes an answer. A new value is an empty cache (invalidation)."""
     index_id = getattr(retriever, "index_id", lambda: retriever.name)()
     raw = "|".join([retriever.name, str(index_id), settings.embed_model, provider.name,
-                    settings.llm_model, PROMPT_VERSION, str(settings.relevance_floor)])
+                    settings.llm_model, PROMPT_VERSION, str(settings.relevance_floor),
+                    SEMANTIC_CACHE_POLICY])
+    if provider.name == "hosted":
+        raw += f"|{settings.hosted_base_url.rstrip('/')}|{settings.hosted_json_mode}"
     return hashlib.sha256(raw.encode()).hexdigest()[:16]
 
 
@@ -81,8 +86,14 @@ def _ground(answer: Answer, passages: list[Passage]) -> tuple[Answer, str | None
     if not check.valid:
         metrics.ABSTENTIONS.labels(reason="no_valid_citation").inc()
         return abstention("the answer cited no retrieved passage"), "no_valid_citation"
+    cited_answer = render_inline_citations(answer.answer, check, passages)
+    if cited_answer is None:
+        metrics.ABSTENTIONS.labels(reason="no_valid_citation").inc()
+        log.info("inline citations rejected")
+        return abstention("the answer lacked verified sentence citations"), "no_valid_citation"
     confidence = _DOWNGRADE[answer.confidence] if check.dropped else answer.confidence
-    return answer.model_copy(update={"citations": check.valid, "confidence": confidence}), None
+    return answer.model_copy(update={"answer": cited_answer, "citations": check.valid,
+                                     "confidence": confidence}), None
 
 
 def answer_question(
@@ -107,12 +118,13 @@ def _answer_question(
     embedder = embedder or HashEmbedder()
     followup = is_followup(question)
     generation = cache_generation(retriever, provider, settings)
+    cache_text = semantic_cache_intent(question) or question
 
     # 1. cache
     vector: list[float] = []
     if cache.name != "none" and not followup:
         try:
-            vector = embedder.embed(question)
+            vector = embedder.embed(cache_text)
             hit = cache.lookup(question, vector, generation)
         except DependencyUnavailable:
             raise
@@ -156,6 +168,16 @@ def _answer_question(
         if fallback_reason is None:
             answer, declined = _ground(answer, grounded)
 
+    outcome: Literal["answered", "abstained", "generation_failed", "citation_failed"]
+    if fallback_reason is not None:
+        outcome = "generation_failed"
+    elif declined == "no_valid_citation":
+        outcome = "citation_failed"
+    elif answer.answered_from_context:
+        outcome = "answered"
+    else:
+        outcome = "abstained"
+
     response = AskResponse(
         request_id=rid,
         answer=answer.answer,
@@ -169,12 +191,13 @@ def _answer_question(
             for p in passages
         ],
         provider=provider.name,
+        outcome=outcome,
     )
 
     # 7. cache
     if cache.name != "none" and fallback_reason is None and should_cache(question, response):
         try:
-            cache.store(question, vector or embedder.embed(question), generation, response)
+            cache.store(question, vector or embedder.embed(cache_text), generation, response)
         except Exception as exc:
             log.warning("cache store failed", extra={"error": str(exc)[:200]})
 
