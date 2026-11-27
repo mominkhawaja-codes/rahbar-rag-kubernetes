@@ -1,0 +1,8 @@
+traces: 0  (None .. None)
+status: {'ok': 0, 'failed': 0}   outcomes: {}
+top-1 similarity: n=0 min=None p25=None p50=None p75=None max=None mean=None
+  histogram: 
+abstention rate: None  ({'count': 0, 'of': 0, 'reasons': {}})
+cache hit rate: None  ({'hit': 0, 'miss': 0, 'skip': 0, 'error': 0})
+latency per stage (ms):
+injection attempts flagged: {'traces_with_any': 0, 'in_question': 0, 'in_retrieved_passages': 0, 'passages_sent_to_model': 0, 'answer_echoed_injection': 0}

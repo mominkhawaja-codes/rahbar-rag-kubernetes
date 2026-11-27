@@ -61,6 +61,11 @@ class Settings:
 
     log_level: str = "INFO"
 
+    # Traces (Assignment 03, Part D1): one JSON line per query on stdout, and appended to
+    # TRACE_DIR/traces-<date>.jsonl when TRACE_DIR is set (a PersistentVolume in the cluster).
+    trace_dir: str = ""
+    trace_stdout: bool = True
+
 
 def get_settings() -> Settings:
     return Settings(
@@ -87,4 +92,6 @@ def get_settings() -> Settings:
         cache_ttl=_int("CACHE_TTL", 86400),
         cache_max_entries=_int("CACHE_MAX_ENTRIES", 2000),
         log_level=os.environ.get("LOG_LEVEL", "INFO"),
+        trace_dir=os.environ.get("TRACE_DIR", ""),
+        trace_stdout=_bool("TRACE_STDOUT", True),
     )

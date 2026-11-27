@@ -1,0 +1,96 @@
+{
+  "traces": 6,
+  "window": {
+    "first": "2026-11-27T18:18:19.263Z",
+    "last": "2026-11-27T18:19:51.997Z",
+    "requested": {
+      "since": null,
+      "until": null
+    }
+  },
+  "status": {
+    "ok": 6,
+    "failed": 0
+  },
+  "outcomes": {
+    "citation_failed": 5,
+    "abstained": 1
+  },
+  "top1_similarity": {
+    "n": 6,
+    "min": 0.6726,
+    "p25": 0.763,
+    "p50": 0.7912,
+    "p75": 0.7937,
+    "p95": 0.8357,
+    "max": 0.8494,
+    "mean": 0.7754,
+    "histogram": {
+      "0.0-0.1": 0,
+      "0.1-0.2": 0,
+      "0.2-0.3": 0,
+      "0.3-0.4": 0,
+      "0.4-0.5": 0,
+      "0.5-0.6": 0,
+      "0.6-0.7": 1,
+      "0.7-0.8": 4,
+      "0.8-0.9": 1,
+      "0.9-1.0": 0
+    }
+  },
+  "abstention_rate": 1.0,
+  "abstentions": {
+    "count": 6,
+    "of": 6,
+    "reasons": {
+      "no_valid_citation": 5,
+      "model": 1
+    }
+  },
+  "cache_hit_rate": 0.0,
+  "cache": {
+    "hit": 0,
+    "miss": 6,
+    "skip": 0,
+    "error": 0
+  },
+  "latency_ms": {
+    "cache_lookup": {
+      "n": 6,
+      "p50": 335.84,
+      "p95": 6661.595
+    },
+    "citation_check": {
+      "n": 6,
+      "p50": 0.23,
+      "p95": 0.2975
+    },
+    "generation": {
+      "n": 6,
+      "p50": 9651.24,
+      "p95": 39173.61
+    },
+    "relevance_floor": {
+      "n": 6,
+      "p50": 0.0,
+      "p95": 0.01
+    },
+    "retrieval": {
+      "n": 6,
+      "p50": 17.575,
+      "p95": 281.9325
+    },
+    "total": {
+      "n": 6,
+      "p50": 10024.23,
+      "p95": 46098.57
+    }
+  },
+  "injection_attempts_flagged": {
+    "traces_with_any": 4,
+    "in_question": 1,
+    "in_retrieved_passages": 3,
+    "passages_sent_to_model": 3,
+    "answer_echoed_injection": 0
+  }
+}

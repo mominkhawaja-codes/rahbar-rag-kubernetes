@@ -26,6 +26,10 @@ class Passage(BaseModel):
     section: str
     page: int | None = None
     score: float = Field(description="Similarity, higher is closer (1 - cosine distance).")
+    # From the chunk metadata, for the trace (Part D1). Optional: the stub has none.
+    doc_id: str | None = None
+    doc_version: str | None = None
+    superseded: bool | None = None
 
 
 class Citation(BaseModel):

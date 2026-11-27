@@ -18,6 +18,7 @@ from collections.abc import Callable
 from pydantic import ValidationError
 
 from ...schemas import Answer, Passage
+from ...services import trace as tracing
 
 log = logging.getLogger("rahbar.llm")
 
@@ -55,10 +56,12 @@ def answer_schema() -> dict:
     return Answer.model_json_schema()
 
 
+TAG_PATTERN = re.compile(r"</?\s*(passage|system|user|assistant|instructions?)\b[^>]*>", re.I)
+
+
 def _neutralise(text: str) -> str:
     """A passage must not be able to close its own element or open a new one."""
-    return re.sub(r"</?\s*(passage|system|user|assistant|instructions?)\b[^>]*>", "[tag removed]",
-                  text, flags=re.I)
+    return TAG_PATTERN.sub("[tag removed]", text)
 
 
 def format_passages(passages: list[Passage]) -> str:
@@ -83,6 +86,22 @@ def build_messages(question: str, passages: list[Passage], *,
     return [{"role": "system", "content": system}, {"role": "user", "content": user}]
 
 
+def _traced(call: Callable[[list[dict[str, str]]], str]) -> Callable[[list[dict[str, str]]], str]:
+    """Record the exact messages of every model call, and its raw reply, in the trace."""
+    def wrapped(messages: list[dict[str, str]]) -> str:
+        trace = tracing.current()
+        try:
+            raw = call(messages)
+        except Exception as exc:
+            if trace is not None:
+                trace.add_prompt_attempt(messages, None, f"{type(exc).__name__}: {str(exc)[:300]}")
+            raise
+        if trace is not None:
+            trace.add_prompt_attempt(messages, raw)
+        return raw
+    return wrapped
+
+
 class GenerationFailed(RuntimeError):
     """The model could not produce a valid Answer, even after the retry."""
 
@@ -102,6 +121,7 @@ def generate_with_retry(call: Callable[[list[dict[str, str]]], str], question: s
     it. A second failure raises GenerationFailed, which the service turns into the safe
     fallback answer. Timeouts and HTTP errors propagate to the same fallback."""
     messages = build_messages(question, passages, include_schema=include_schema)
+    call = _traced(call)
     raw = call(messages)
     try:
         return parse_answer(raw)

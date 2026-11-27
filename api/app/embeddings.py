@@ -46,6 +46,33 @@ class OllamaEmbedder:
         self.num_threads = settings.ollama_num_threads
         self._memo: OrderedDict[str, list[float]] = OrderedDict()
         self._memo_size = memo_size
+        self._tags_url = f"{settings.ollama_url.rstrip('/')}/api/tags"
+        self._digest: str | None = None
+        self._digest_error = ""
+        self._digest_checked = 0.0
+
+    def model_digest(self) -> str:
+        """Ollama's digest of the embedding model, for the trace (Part D1). Asked once per
+        process; after a failure, asked again at most every 5 minutes. Never guessed: when
+        Ollama cannot say, the value says so."""
+        if self._digest:
+            return self._digest
+        now = time.monotonic()
+        if self._digest_checked and now - self._digest_checked < 300:
+            return f"unavailable: {self._digest_error}"
+        self._digest_checked = now
+        try:
+            response = httpx.get(self._tags_url, timeout=self.timeout)
+            response.raise_for_status()
+            names = {self.model, f"{self.model}:latest"}
+            for entry in response.json().get("models", []):
+                if entry.get("name") in names or entry.get("model") in names:
+                    self._digest = str(entry["digest"])
+                    return self._digest
+            self._digest_error = f"{self.model} not listed by {self._tags_url}"
+        except (httpx.HTTPError, KeyError, ValueError) as exc:
+            self._digest_error = f"{type(exc).__name__}: {str(exc)[:120]}"
+        return f"unavailable: {self._digest_error}"
 
     def embed(self, text: str) -> list[float]:
         if text in self._memo:

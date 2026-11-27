@@ -1,0 +1,15 @@
+traces: 3  (2026-11-27T19:05:02.239Z .. 2026-11-27T19:05:36.477Z)
+status: {'ok': 3, 'failed': 0}   outcomes: {'answered': 3}
+top-1 similarity: n=2 min=0.7912 p25=0.8057 p50=0.8203 p75=0.8349 max=0.8494 mean=0.8203
+  histogram: 0.7-0.8:1  0.8-0.9:1
+abstention rate: 0.0  ({'count': 0, 'of': 3, 'reasons': {}})
+cache hit rate: 0.3333  ({'hit': 1, 'miss': 2, 'skip': 0, 'error': 0})
+latency per stage (ms):
+  cache_lookup     n=3    p50=549.58     p95=575.356
+  cache_store      n=2    p50=0.055      p95=0.0595
+  citation_check   n=2    p50=1.39       p95=2.56
+  generation       n=2    p50=1567.1     p95=1645.886
+  relevance_floor  n=2    p50=0.0        p95=0.0
+  retrieval        n=2    p50=205.1      p95=380.177
+  total            n=3    p50=2059.58    p95=2580.761
+injection attempts flagged: {'traces_with_any': 1, 'in_question': 0, 'in_retrieved_passages': 1, 'passages_sent_to_model': 1, 'answer_echoed_injection': 0}

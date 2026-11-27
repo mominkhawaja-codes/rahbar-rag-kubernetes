@@ -1,0 +1,57 @@
+{
+  "http_status": 200,
+  "x_cache": "hit",
+  "body": {
+    "request_id": "h-q2",
+    "answer": "3 years. [faculty-entrepreneurship-policy-2026-revision.pdf / 2. Eligibility [2.1-2.3]]",
+    "citations": [
+      {
+        "source": "faculty-entrepreneurship-policy-2026-revision.pdf",
+        "section": "2. Eligibility [2.1-2.3]",
+        "page": 1
+      }
+    ],
+    "answered_from_context": true,
+    "confidence": "high",
+    "retrieved": [
+      {
+        "chunk_id": "faculty-entrepreneurship-policy-2026-revision-pdf-0002",
+        "source": "faculty-entrepreneurship-policy-2026-revision.pdf",
+        "section": "2. Eligibility [2.1-2.3]",
+        "page": 1,
+        "score": 0.8494
+      },
+      {
+        "chunk_id": "faculty-entrepreneurship-policy-2026-revision-pdf-0005",
+        "source": "faculty-entrepreneurship-policy-2026-revision.pdf",
+        "section": "5. Reporting [5.1-5.2]",
+        "page": 1,
+        "score": 0.7648
+      },
+      {
+        "chunk_id": "faculty-entrepreneurship-policy-2026-revision-pdf-0006",
+        "source": "faculty-entrepreneurship-policy-2026-revision.pdf",
+        "section": "6. Other conditions [6.1-6.3]",
+        "page": 1,
+        "score": 0.7526
+      },
+      {
+        "chunk_id": "faculty-entrepreneurship-policy-2026-revision-pdf-0001",
+        "source": "faculty-entrepreneurship-policy-2026-revision.pdf",
+        "section": "1. Purpose and scope [1.1-1.2]",
+        "page": 1,
+        "score": 0.7134
+      },
+      {
+        "chunk_id": "faculty-entrepreneurship-policy-2026-revision-pdf-0004",
+        "source": "faculty-entrepreneurship-policy-2026-revision.pdf",
+        "section": "4. Procedure [4.1-4.2]",
+        "page": 1,
+        "score": 0.7026
+      }
+    ],
+    "provider": "hosted",
+    "outcome": "answered",
+    "cached": true
+  }
+}

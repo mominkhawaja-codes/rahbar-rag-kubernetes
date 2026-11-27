@@ -1,0 +1,59 @@
+{
+  "traces": 0,
+  "window": {
+    "first": null,
+    "last": null,
+    "requested": {
+      "since": null,
+      "until": null
+    }
+  },
+  "status": {
+    "ok": 0,
+    "failed": 0
+  },
+  "outcomes": {},
+  "top1_similarity": {
+    "n": 0,
+    "min": null,
+    "p25": null,
+    "p50": null,
+    "p75": null,
+    "p95": null,
+    "max": null,
+    "mean": null,
+    "histogram": {
+      "0.0-0.1": 0,
+      "0.1-0.2": 0,
+      "0.2-0.3": 0,
+      "0.3-0.4": 0,
+      "0.4-0.5": 0,
+      "0.5-0.6": 0,
+      "0.6-0.7": 0,
+      "0.7-0.8": 0,
+      "0.8-0.9": 0,
+      "0.9-1.0": 0
+    }
+  },
+  "abstention_rate": null,
+  "abstentions": {
+    "count": 0,
+    "of": 0,
+    "reasons": {}
+  },
+  "cache_hit_rate": null,
+  "cache": {
+    "hit": 0,
+    "miss": 0,
+    "skip": 0,
+    "error": 0
+  },
+  "latency_ms": {},
+  "injection_attempts_flagged": {
+    "traces_with_any": 0,
+    "in_question": 0,
+    "in_retrieved_passages": 0,
+    "passages_sent_to_model": 0,
+    "answer_echoed_injection": 0
+  }
+}

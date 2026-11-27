@@ -141,7 +141,7 @@ Behaviour to rely on:
    Verification passes them (checked with `--verify-only`: 3 accepted, none quarantined), so
    the e2e evaluation does not need changes, but the CI Job also needs writable state and
    report directories: an `emptyDir` is enough there.
-5. **API image.** One line changed: `ChromaRetriever.index_id()` now reads the collection
+5. **API image.** Part D adds tracing (section 6.2). One line also changed: `ChromaRetriever.index_id()` now reads the collection
    metadata on every call instead of every 30 seconds. This adds one small request to Chroma
    per `/api/ask`, including cache hits. Rebuild and roll the API image so it carries this.
 6. **No change** to the Chroma StatefulSet, Redis, Services, Ingress or NetworkPolicies.
@@ -191,6 +191,66 @@ ids and embeddings. The Job's own cluster timings and memory are not known yet.
 Observed on the native run and worth knowing before the cluster run: the two exact duplicates
 still had their text embedded for the near-duplicate check (12 of the 44 verification
 embeddings); this changes no outcome.
+
+## 6.2 Part D: traces, trace tool and monitoring (API Deployment)
+
+The API writes one JSON line per question (`api/app/services/trace.py`). Nothing is needed for
+the stdout copy; the file copy needs a volume.
+
+| Setting | Default | Set in the cluster to |
+| --- | --- | --- |
+| `TRACE_DIR` | empty (stdout only) | the trace volume mount, e.g. `/data/traces` |
+| `TRACE_STDOUT` | `true` | keep `true` (`kubectl logs` shows every trace, assignment F4) |
+
+- **Volume.** A PVC mounted read-write at `TRACE_DIR` on the **API Deployment** (all replicas),
+  `fsGroup: 10001`, and read by the report tools (a debug pod or the evaluation Job). Each pod
+  writes `traces-<UTC date>-<pod name>.jsonl` (the file name uses `HOSTNAME`, which Kubernetes
+  sets to the pod name), so replicas never append to the same file. With minikube's
+  ReadWriteOnce storage all replicas run on the one node, which is allowed; on a multi-node
+  cluster use ReadWriteMany or one volume per pod.
+- **Size.** A trace holds the full prompt (about 10 to 20 kB per answered question). Plan the
+  volume, or rotate files by date.
+- **No secrets.** Only listed settings are recorded; the API key and request headers never
+  are (tested). The trace does contain the student's question and the document text sent to
+  the model.
+- **No new dependencies**; the tools use the standard library and read the files only.
+- **Embedding version.** Each trace carries `embedding.model_digest`, Ollama's digest of the
+  embedding model, read once per API pod from `OLLAMA_URL/api/tags` (the NetworkPolicy already
+  allows the API to reach Ollama). If Ollama cannot answer, the field says `unavailable: ...`
+  and the API asks again at most every 5 minutes; it is never guessed.
+- **Encoding.** Trace files are UTF-8. The stdout copy is ASCII-escaped JSON (`\uXXXX`), so a
+  non-ASCII character in an answer cannot make the log write fail, whatever the container's
+  locale. (A Windows run lost one trace to exactly that before this was fixed.)
+- **Generation for the demo.** The dev overlay's hosted generator (Groq `openai/gpt-oss-20b`,
+  key in `rahbar-secret`) is what the grounded-answer and cache-hit demonstration needs: the
+  local `llama3.2:3b` gets the content right but its citations are rejected
+  (`eval/results/d-observability/README.md`).
+
+Acceptance commands (assignment D1 to D4 and F4):
+
+```
+kubectl -n rahbar logs deploy/api | grep '"rahbar.trace"' | tail -1          # a full trace on stdout
+curl -s -H 'X-Request-ID: demo-1' -H 'Content-Type: application/json'      -d '{"question": "How much does it cost to replace a lost student card?"}'      http://<ingress>/api/ask                                                  # trace id = demo-1
+kubectl -n rahbar exec <pod with the trace volume> --      python eval/tools/trace_show.py demo-1 --dir /data/traces               # D2: exact context and prompt
+kubectl -n rahbar exec <pod with the trace volume> --      python eval/tools/trace_summary.py --dir /data/traces --last 1h         # D3: window summary
+```
+
+(The tools are in the repository, not in the API image: copy them into a debug pod, run them in
+the evaluation Job's image, or `kubectl cp` the trace files out and run them locally.)
+
+Expected, from the native runs (final hosted run `eval/results/d-observability-hosted/`, Groq
+`openai/gpt-oss-20b`, 3 requests; also the local-model run in `eval/results/d-observability/`):
+
+| Request | Expected trace |
+| --- | --- |
+| "For how many years can a faculty start-up use the university's intellectual property at no initial cost?" | `outcome: answered` ("3 years.", valid citation); `cache.result: miss`; filter `{"superseded": false}`; top chunk from `faculty-entrepreneurship-policy-2026-revision.pdf` (0.8494); prompt with one model call; embedding digest `0a109f42...`; no guardrail actions |
+| The same question again | HTTP header `X-Cache: hit`; `cache.result: hit`, `served_from_trace_id` = the first request's id; retrieval, generation and citation check `skipped`; no prompt; `trace_show` prints the first request's context and prompt |
+| "How much does it cost to replace a lost student card?" | `answered` ("Rs. 500", valid citations); `student-affairs-faq-2026-md-0001` at rank 1 with `passage_injection_scan: flagged` and `output_injection_echo_check: passed` |
+
+Summary over these three: cache hit rate 0.3333, abstention rate 0.0, p95 total latency 2.6 s on
+the laptop, 1 injection attempt flagged. The cluster will differ in latency, not in the
+structure of the traces. Not yet done on the cluster: the trace volume, `kubectl logs` showing
+the trace lines, and running the tools there (assignment F4).
 
 ## 7. Known limits to keep in mind
 
