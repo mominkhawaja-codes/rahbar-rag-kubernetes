@@ -3,6 +3,21 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
+
+
+@dataclass
+class SourceDoc:
+    """One file in the corpus plus what its source says about it. A field the source does
+    not state stays None: verification reports it as missing instead of inventing it."""
+
+    path: Path
+    doc_version: str | None
+    superseded: bool
+    title: str | None = None
+    doc_id: str | None = None      # explicit id shared by the versions of one document
+    sha256: str | None = None      # expected hash of the file, from _index.json
+    size: int | None = None        # expected size in bytes, from _index.json
 
 
 @dataclass

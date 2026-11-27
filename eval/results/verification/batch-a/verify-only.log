@@ -1,0 +1,24 @@
+ocr
+ocr
+ocr
+ocr
+HTTP Request: POST http://127.0.0.1:11434/api/embed "HTTP/1.1 200 OK"
+HTTP Request: POST http://127.0.0.1:11434/api/embed "HTTP/1.1 200 OK"
+HTTP Request: POST http://127.0.0.1:11434/api/embed "HTTP/1.1 200 OK"
+HTTP Request: POST http://127.0.0.1:11434/api/embed "HTTP/1.1 200 OK"
+HTTP Request: POST http://127.0.0.1:11434/api/embed "HTTP/1.1 200 OK"
+HTTP Request: POST http://127.0.0.1:11434/api/embed "HTTP/1.1 200 OK"
+HTTP Request: POST http://127.0.0.1:11434/api/embed "HTTP/1.1 200 OK"
+HTTP Request: POST http://127.0.0.1:11434/api/embed "HTTP/1.1 200 OK"
+HTTP Request: POST http://127.0.0.1:11434/api/embed "HTTP/1.1 200 OK"
+{"ts": "2026-11-27T12:12:24Z", "logger": "rahbar.indexer", "msg": "verification report written", "path": "E:\\Semester 5\\Software Construction and Development\\rahbar-starter\\rahbar-starter\\eval\\results\\verification\\batch-a\\verification-20261127T121224Z.json"}
+{"ts": "2026-11-27T12:12:24Z", "logger": "rahbar.indexer", "msg": "verified", "source": "undergraduate-academic-rules-aug-2023.pdf", "action": "index", "failed": null, "quarantined_to": null, "quarantine_error": null}
+{"ts": "2026-11-27T12:12:24Z", "logger": "rahbar.indexer", "msg": "verified", "source": "academic-rules-handbook-jun-2026.pdf", "action": "index", "failed": null, "quarantined_to": null, "quarantine_error": null}
+{"ts": "2026-11-27T12:12:24Z", "logger": "rahbar.indexer", "msg": "verified", "source": "prospectus-2026-academic-rules-and-regulations.pdf", "action": "index", "failed": null, "quarantined_to": null, "quarantine_error": null}
+{"ts": "2026-11-27T12:12:24Z", "logger": "rahbar.indexer", "msg": "verified", "source": "student-handbook-jun-2026.pdf", "action": "index", "failed": null, "quarantined_to": null, "quarantine_error": null}
+{"ts": "2026-11-27T12:12:24Z", "logger": "rahbar.indexer", "msg": "verified", "source": "annual-report-2019-20.pdf", "action": "index", "failed": null, "quarantined_to": null, "quarantine_error": null}
+{"ts": "2026-11-27T12:12:24Z", "logger": "rahbar.indexer", "msg": "verified", "source": "annual-report-2023-24.pdf", "action": "index", "failed": null, "quarantined_to": null, "quarantine_error": null}
+{"ts": "2026-11-27T12:12:24Z", "logger": "rahbar.indexer", "msg": "verified", "source": "fee-structure-page.html", "action": "index", "failed": null, "quarantined_to": null, "quarantine_error": null}
+{"ts": "2026-11-27T12:12:24Z", "logger": "rahbar.indexer", "msg": "verified", "source": "grading-page.html", "action": "index", "failed": null, "quarantined_to": null, "quarantine_error": null}
+{"ts": "2026-11-27T12:12:24Z", "logger": "rahbar.indexer", "msg": "verified", "source": "faculty-entrepreneurship-and-technical-start-ups-policy.pdf", "action": "index", "failed": null, "quarantined_to": null, "quarantine_error": null}
+{"ts": "2026-11-27T12:12:24Z", "logger": "rahbar.indexer", "msg": "verification finished", "index": 9, "supersede": 0, "quarantine": 0}

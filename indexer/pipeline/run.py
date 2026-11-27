@@ -1,6 +1,7 @@
 """The indexer Job's entry point. It runs once and exits (section 4.2).
 
     python -m pipeline.run --dummy    # week 1: three fake chunks, no model needed
+    python -m pipeline.run --verify-only [--no-quarantine]   # verification stage + report only
     python -m pipeline.run            # the real pipeline: extract, clean, chunk, embed, store
 
 Exit code 0 means the index was written; anything else fails the Job, and
@@ -16,9 +17,13 @@ import os
 import sys
 import time
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from .config import IndexerSettings, get_settings
-from .models import Chunk
+from .models import Chunk, Document, SourceDoc
+
+if TYPE_CHECKING:
+    from .verify import VerificationRun
 
 
 def log(msg: str, **fields: object) -> None:
@@ -40,46 +45,120 @@ def _front_matter(path: Path) -> dict[str, str]:
     return meta
 
 
-def discover(corpus_dir: str) -> list[tuple[Path, str, bool]]:
-    """List (path, doc_version, superseded) for every document to index.
+def _markdown_title(path: Path) -> str | None:
+    """The document's own first '# ' heading, after any front matter."""
+    from .extract import strip_front_matter
+
+    for line in strip_front_matter(path.read_text(encoding="utf-8")).splitlines():
+        if line.startswith("# "):
+            return line[2:].strip() or None
+    return None
+
+
+def discover_sources(corpus_dir: str, quarantine_dir: str | None = None) -> list[SourceDoc]:
+    """List every document to index with what its source says about it.
 
     corpus/fetch.py writes _index.json next to the files it downloads; use it when
     present. Otherwise read Markdown front matter (the CI fixtures work this way).
+    A field the source does not state stays None; nothing is invented here. Files that an
+    earlier run moved to quarantine are skipped.
     """
     root = Path(corpus_dir)
+    quarantined = Path(quarantine_dir) if quarantine_dir else None
     index = root / "_index.json"
     if index.exists():
-        entries = json.loads(index.read_text(encoding="utf-8"))
-        return [(root / e["file"], str(e.get("doc_version", "unknown")),
-                 bool(e.get("superseded", False))) for e in entries]
+        found = []
+        for e in json.loads(index.read_text(encoding="utf-8")):
+            path = root / e["file"]
+            if not path.exists() and quarantined and (quarantined / e["file"]).exists():
+                continue
+            found.append(SourceDoc(
+                path=path, doc_version=e.get("doc_version"),
+                superseded=bool(e.get("superseded", False)), title=e.get("name") or e.get("title"),
+                doc_id=e.get("doc_id"), sha256=e.get("sha256"), size=e.get("bytes")))
+        return found
     found = []
     for path in sorted(root.glob("*")):
         if path.suffix.lower() not in {".pdf", ".md", ".html", ".txt"}:
             continue
         if path.name.lower().startswith("readme"):
             continue
-        meta = _front_matter(path) if path.suffix.lower() == ".md" else {}
-        found.append((path, meta.get("doc_version", "unknown"),
-                      meta.get("superseded", "false").lower() == "true"))
+        md = path.suffix.lower() == ".md"
+        meta = _front_matter(path) if md else {}
+        found.append(SourceDoc(
+            path=path, doc_version=meta.get("doc_version"),
+            superseded=meta.get("superseded", "false").lower() == "true",
+            title=meta.get("title") or (_markdown_title(path) if md else None),
+            doc_id=meta.get("doc_id")))
     return found
 
 
-def build_chunks(settings: IndexerSettings) -> tuple[list[Chunk], dict[str, int]]:
-    """Extract, clean and chunk every document. No network: safe for a dry run."""
+def discover(corpus_dir: str) -> list[tuple[Path, str, bool]]:
+    """List (path, doc_version, superseded) for every document to index."""
+    return [(s.path, s.doc_version or "unknown", s.superseded)
+            for s in discover_sources(corpus_dir)]
+
+
+def run_verification(settings: IndexerSettings, sources: list[SourceDoc], apply: bool,
+                     use_embeddings: bool) -> "VerificationRun":
+    """Verify the documents; with `apply`, move failures to quarantine and write the report."""
+    from .clean import clean
+    from .embed import embed
+    from .extract import extract
+    from .verify import quarantine, verify_documents, write_report
+
+    run = verify_documents(
+        sources,
+        extract_fn=lambda s: extract(str(s.path), s.doc_version or "unknown", s.superseded),
+        clean_fn=clean,
+        embed_fn=(lambda texts: embed(texts, settings)) if use_embeddings else None,
+        min_chars=settings.min_chars, near_dup_threshold=settings.near_dup_threshold)
+    if apply:
+        quarantine(run, settings.quarantine_dir)
+        report = write_report(run, settings.report_dir, {
+            "corpus_dir": settings.corpus_dir, "quarantine_dir": settings.quarantine_dir,
+            "embed_model": settings.embed_model, "min_chars": settings.min_chars,
+            "near_dup_threshold": settings.near_dup_threshold})
+        log("verification report written", path=str(report))
+    for v in run.verdicts:
+        failed = {c: ch.reason for c, ch in v.checks.items() if not ch.ok}
+        log("verified", source=v.source, action=v.action, failed=failed or None,
+            quarantined_to=v.quarantined_to, quarantine_error=v.quarantine_error)
+    return run
+
+
+def build_chunks(settings: IndexerSettings, apply: bool = True,
+                 use_embeddings: bool = True) -> tuple[list[Chunk], dict[str, int]]:
+    """Extract, clean, verify and chunk every document.
+
+    Verification (verify.py) sits between clean and chunk: documents that fail are not
+    chunked. `apply` moves them to quarantine and writes the report; a dry run passes
+    apply=False and use_embeddings=False, so it writes nothing and needs no model.
+    """
     from .chunk import chunk, count_tokens, heading_of
     from .clean import clean
     from .extract import extract
 
-    documents = discover(settings.corpus_dir)
-    if not documents:
+    sources = discover_sources(settings.corpus_dir, settings.quarantine_dir)
+    if not sources:
         raise SystemExit(f"no documents found in {settings.corpus_dir}")
+    for src in sources:
+        if not src.path.exists():
+            raise SystemExit(f"listed in _index.json but missing: {src.path}")
+    if settings.verify_enabled:
+        run = run_verification(settings, sources, apply, use_embeddings)
+        documents: list[tuple[Path, Document]] = [
+            (s.path, run.documents[s.path.name]) for s in sources if s.path.name in run.documents]
+        if not documents:
+            raise SystemExit("every document failed verification: nothing to index")
+    else:
+        documents = [(s.path, clean(extract(str(s.path), s.doc_version or "unknown",
+                                            s.superseded))) for s in sources]
     all_chunks: list[Chunk] = []
     totals = {"documents": 0, "pages": 0, "ocr_pages": 0, "source_tokens": 0,
               "stored_tokens": 0}
-    for path, doc_version, superseded in documents:
-        if not path.exists():
-            raise SystemExit(f"listed in _index.json but missing: {path}")
-        doc = clean(extract(str(path), doc_version, superseded))
+    for path, doc in documents:
+        doc_version, superseded = doc.doc_version, doc.superseded
         pieces = chunk(doc, settings.chunk_size, settings.chunk_overlap)
         # headings are stored as each chunk's `section`, not in its text: leave them out
         source_tokens = sum(count_tokens(line) for p in doc.pages
@@ -118,7 +197,7 @@ def _amplification(totals: dict[str, int]) -> float:
 
 def dry_run(settings: IndexerSettings, show: int) -> int:
     """Chunk the corpus and print statistics and sample chunks. Writes nothing."""
-    all_chunks, totals = build_chunks(settings)
+    all_chunks, totals = build_chunks(settings, apply=False, use_embeddings=False)
     log("dry run", **totals, amplification=_amplification(totals),
         chunk_size=settings.chunk_size, chunk_overlap=settings.chunk_overlap)
     for c in all_chunks[:show]:
@@ -128,11 +207,35 @@ def dry_run(settings: IndexerSettings, show: int) -> int:
     return len(all_chunks)
 
 
+def verify_only(settings: IndexerSettings, move: bool) -> int:
+    """Run the verification stage alone: extract, clean, verify, write the report. Needs the
+    embedding model (near-duplicates) but no Chroma. With move=False nothing is moved."""
+    sources = discover_sources(settings.corpus_dir, settings.quarantine_dir)
+    if not sources:
+        raise SystemExit(f"no documents found in {settings.corpus_dir}")
+    run = run_verification(settings, sources, apply=move, use_embeddings=True)
+    if not move:
+        from .verify import write_report
+        path = write_report(run, settings.report_dir, {
+            "corpus_dir": settings.corpus_dir, "quarantine_dir": settings.quarantine_dir,
+            "embed_model": settings.embed_model, "min_chars": settings.min_chars,
+            "near_dup_threshold": settings.near_dup_threshold, "files_moved": False})
+        log("verification report written", path=str(path))
+    counts = {a: sum(1 for v in run.verdicts if v.action == a)
+              for a in ("index", "supersede", "quarantine")}
+    log("verification finished", **counts)
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Build the RAHBAR index, then exit.")
     parser.add_argument("--dummy", action="store_true", help="write three fake chunks")
     parser.add_argument("--dry-run", action="store_true",
                         help="extract, clean and chunk only; print statistics, write nothing")
+    parser.add_argument("--verify-only", action="store_true",
+                        help="run only the verification stage and write its report")
+    parser.add_argument("--no-quarantine", action="store_true",
+                        help="with --verify-only, report failures but do not move any file")
     parser.add_argument("--show", type=int, default=0, help="with --dry-run, print N chunks")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -140,6 +243,8 @@ def main() -> int:
     if args.dry_run:
         dry_run(settings, args.show)
         return 0
+    if args.verify_only:
+        return verify_only(settings, move=not args.no_quarantine)
     log("indexer starting", dummy=args.dummy, embed_model=settings.embed_model,
         collection=settings.collection, chroma=f"{settings.chroma_host}:{settings.chroma_port}",
         pod=os.environ.get("HOSTNAME", "-"))

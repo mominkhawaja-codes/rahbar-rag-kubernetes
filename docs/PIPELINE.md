@@ -112,6 +112,105 @@ averaging under 60 characters.
 records them, and the exact-term questions ask for them. Heading markers and table pipes
 are kept for the same reason.
 
+## Verification
+
+`verify.py` runs after clean and before chunking (Assignment 03, Part A1; paper 4.2.2).
+Each document gets a pass or fail with a reason for four checks, and one outcome:
+`index` (all pass), `quarantine` (quality, completeness or uniqueness failed: the file is
+moved to `QUARANTINE_DIR` and is not indexed) or `supersede` (only recency failed: a newer
+version exists, so the document is kept and indexed with `superseded=True`). Each run writes
+`verification-<UTC timestamp>.json` to `REPORT_DIR`. `python -m pipeline.run --verify-only`
+runs this stage alone (`--no-quarantine` reports without moving files).
+
+| Check | Fails when | Threshold |
+| --- | --- | --- |
+| Quality | extraction raised an error; fewer than `MIN_CHARS` of text; replacement or control characters above 2 percent; letters below 40 percent of non-space characters | `MIN_CHARS=200` |
+| Completeness | title, version/date or page count missing; the file's sha256 or size differs from `_index.json`; a PDF without `%%EOF`; HTML without `</html>` | none |
+| Recency | an older version of a document that shares an explicit `doc_id` with a newer valid one | none |
+| Uniqueness | same sha256 of the normalised text as an earlier document; or document-embedding cosine at or above the threshold with a document that is not a version of it | `NEAR_DUP_THRESHOLD=0.98` |
+
+Nothing is invented: a title or version the source does not state is reported as missing.
+Titles come from `_index.json`, front matter, or a Markdown file's own first heading.
+
+**Weak hints are warnings.** Text that ends without punctuation is a hint of truncation, but
+many valid files end that way, so it goes into the verdict's `warnings` and never fails a
+document by itself. Only structural evidence (hash or size mismatch, no `%%EOF`, no
+`</html>`) fails completeness.
+
+**Current and superseded documents are told apart in the report.** Every verdict has
+`version_status` (`current` or `superseded`) and `superseded_by` (the newer file, when one
+was found). A source that marks itself `superseded: true` is `superseded` with no
+`superseded_by`. The summary counts `indexed_versions` (current against superseded, among
+documents that are not quarantined) and `documents_with_warnings`. Archiving and restoring
+superseded versions belong to A2.
+
+**A newer version is not a near-duplicate.** Two documents are treated as versions, and so
+skip the near-duplicate test, when they share a `doc_id`, or when their versions differ and
+the source marks one as superseded. Without either signal, no versions are guessed (the
+2019-20 and 2023-24 annual reports are different documents).
+
+### Calibration (27 Nov 2026, `nomic-embed-text`, real Ollama)
+
+A document is embedded as the mean of up to six evenly spaced 1,500-character windows.
+Embedding only the first page would score two handbooks with the same cover text as copies.
+
+Two measurements exist and they are kept apart:
+
+- **Final (OCR on):** the complete Batch A verification with Poppler 26.09.0 and OCR enabled.
+  Report: `eval/results/verification/batch-a/verification-20261127T121224Z.json` (log beside
+  it). Nine documents, 275 pages. All nine passed; nothing was quarantined.
+- **Earlier (OCR off):** a first pass on the same nine files before Poppler was installed.
+  Four PDFs contributed less text or failed extraction. Its report stayed in a temporary scratch folder outside the repository, so its
+  numbers are not backed by a committed file.
+
+Batch A cosines. The report stores each document's nearest other document and the highest
+score against earlier retained documents, not a full matrix, so a pair appears only where one
+of those fields recorded it; "not recorded" is not a zero.
+
+| Pair (different documents) | Final, OCR on | Earlier, OCR off |
+| --- | --- | --- |
+| Student handbook vs academic rules handbook | **0.9576** (highest) | 0.9643 |
+| Rules Aug 2023 vs prospectus 2026 | 0.9540 | not recorded |
+| Annual report 2019-20 vs 2023-24 | 0.9475 | 0.9475 |
+| Annual report 2019-20 vs student handbook | 0.9140 | not recorded |
+| Prospectus vs academic rules handbook | 0.9016 | 0.9095 |
+| Grading page vs prospectus | 0.8979 | 0.8979 |
+| Faculty policy vs student handbook | 0.8510 | not extracted (scanned) |
+| Fee page vs rules Aug 2023 | 0.8385 | not recorded |
+| Fee page vs prospectus | 0.8289 | 0.8289 |
+
+Edited-copy and version scores were measured earlier, on small documents that involve no OCR
+(two HTML pages and the CI fixtures), so the OCR change does not affect them:
+
+| Pair | Cosine |
+| --- | --- |
+| Grading page vs a lightly edited copy (6 numbers, 3 words, 1 sentence changed) | 0.9981 |
+| Fee page vs the same kind of edit | 0.9930 |
+| Fixture rules 2023 vs 2026 (two versions of one document) | 0.9907 |
+
+My first threshold, 0.95, wrongly quarantined the student handbook in the OCR-off pass
+(0.9643). **0.98** sits above the highest different-document pair (0.9576 with OCR, 0.9643
+without) and below the lightest edited copy (0.993). The last row shows why versions must be
+exempt: they score above the threshold.
+
+Quality figures from the final run: letters were 92 to 96 percent of characters in the nine
+PDFs and 88 percent in the two HTML pages (lowest 87.5 percent, the fee page); the shortest
+document had 3,706 characters. In the earlier OCR-off pass the 2023 rules had only 221
+characters (77.8 percent letters) and the faculty policy 0, which is what OCR fixed.
+
+Limits of this calibration:
+
+- Edited copies were generated by me from two small documents, not found in the wild.
+  A heavier edit that scores between 0.96 and 0.98 is not caught.
+- The margin to the highest different-document pair is small (0.9576 against 0.98). A new
+  document from the same domain could land closer; Batch B will test this.
+- `MIN_CHARS=200` and the 40 percent letter ratio are chosen limits, not fitted ones: every
+  real document passes with room to spare, and no failing real document exists to calibrate
+  against until Batch B.
+- Reports written from now on carry `ocr_pages` and `ocr_pages_empty` per document. The
+  Batch A report above predates them and does not have them; the 35 OCR pages in the
+  Assignment 02 index come from that earlier measurement, not from this report.
+
 ## Chunking
 
 `chunk.py`. Unit: a **token is a whitespace-separated word**.
