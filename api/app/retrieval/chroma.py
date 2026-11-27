@@ -104,9 +104,13 @@ class ChromaRetriever:
         return self._collection
 
     def index_id(self) -> str:
-        """Identifies the index build; the semantic cache keys on it (invalidation)."""
+        """Identifies the index build; the semantic cache keys on it (invalidation).
+
+        Read fresh on every call (one small request to Chroma), not through the 30 second
+        METADATA_TTL: the indexer changes `index_id` whenever the indexed content changes, and
+        a cached answer must never outlive that change by up to METADATA_TTL seconds."""
         try:
-            self.collection()
+            self.collection(refresh=True)
         except RetrievalUnavailable:
             return "unavailable"
         return str(self._meta.get("index_id") or self._meta.get("built_at") or "unknown")

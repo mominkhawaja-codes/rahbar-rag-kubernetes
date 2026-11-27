@@ -90,10 +90,26 @@ class Verdict:
 
 
 @dataclass
+class PriorDoc:
+    """What an earlier accepted run recorded about a file. When the file's hash is unchanged
+    it is not extracted, cleaned or embedded again (Part A2: an unchanged rerun does no work)."""
+
+    file_sha256: str
+    text_sha256: str
+    vector: list[float]
+    pages: int = 0
+    characters: int = 0
+    letter_ratio: float | None = None
+    ocr_pages: int | None = None
+    ocr_pages_empty: int | None = None
+
+
+@dataclass
 class VerificationRun:
     verdicts: list[Verdict]
     documents: dict[str, Document]        # cleaned documents that will be chunked, by file name
     near_duplicate_check: str             # "done" or why it was skipped
+    vectors: dict[str, list[float]] = field(default_factory=dict)   # document vectors, by file
 
 
 def _hash_file(path: Path) -> str:
@@ -222,12 +238,15 @@ def verify_documents(
     embed_fn: EmbedFn | None,
     min_chars: int = 200,
     near_dup_threshold: float = 0.98,
+    prior: dict[str, PriorDoc] | None = None,
 ) -> VerificationRun:
     """Verify every source. `embed_fn=None` skips the near-duplicate check (a dry run needs
     no model) and says so in each uniqueness reason."""
     verdicts: list[Verdict] = []
     docs: dict[str, Document] = {}
     texts: dict[str, str] = {}
+    known: dict[str, list[float]] = {}        # document vectors reused from `prior`
+    prior = prior or {}
 
     for src in sources:
         name = src.path.name
@@ -236,6 +255,12 @@ def verify_documents(
         error = None
         try:
             v.file_sha256 = _hash_file(src.path)
+            reuse = prior.get(name)
+            if reuse and reuse.file_sha256 == v.file_sha256:
+                _reuse_prior(v, src, reuse)
+                known[name] = reuse.vector
+                verdicts.append(v)
+                continue
             doc = clean_fn(extract_fn(src))
         except Exception as exc:  # noqa: BLE001 - any failure is a quality failure to report
             doc, error = None, f"{type(exc).__name__}: {exc}"
@@ -251,7 +276,8 @@ def verify_documents(
             v.text_sha256 = hashlib.sha256(normalise(text).encode("utf-8")).hexdigest()
         verdicts.append(v)
 
-    near = _check_uniqueness(verdicts, sources, texts, embed_fn, near_dup_threshold)
+    near, vectors = _check_uniqueness(verdicts, sources, texts, embed_fn, near_dup_threshold,
+                                      known)
     _check_recency(verdicts, sources)
 
     for v in verdicts:
@@ -260,18 +286,40 @@ def verify_documents(
             docs.pop(v.source, None)
         elif not v.checks["recency"].ok:
             v.action = "supersede"
-            docs[v.source].superseded = True
+            if v.source in docs:                  # reused documents have no Document object
+                docs[v.source].superseded = True
         else:
             v.action = "index"
-    return VerificationRun(verdicts, docs, near)
+    return VerificationRun(verdicts, docs, near, vectors)
+
+
+def _reuse_prior(v: Verdict, src: SourceDoc, prior: PriorDoc) -> None:
+    """Quality and the file itself are unchanged, so they still pass. The metadata comes from
+    the source again, so a title or version that was removed since is still caught."""
+    v.pages, v.characters, v.letter_ratio = prior.pages, prior.characters, prior.letter_ratio
+    v.ocr_pages, v.ocr_pages_empty, v.text_sha256 = (prior.ocr_pages, prior.ocr_pages_empty,
+                                                     prior.text_sha256)
+    v.checks["quality"] = Check("pass", "file unchanged since it was last verified; "
+                                        "not extracted again")
+    missing = [what for what, ok in (
+        ("title missing", (src.title or "").strip()),
+        ("version/date missing", (src.doc_version or "").strip().lower() not in _UNKNOWN),
+    ) if not ok]
+    v.checks["completeness"] = (Check("fail", "; ".join(missing)) if missing else
+                                Check("pass", "file unchanged; title and version present"))
 
 
 def _check_uniqueness(verdicts: list[Verdict], sources: list[SourceDoc],
                       texts: dict[str, str], embed_fn: EmbedFn | None,
-                      threshold: float) -> str:
+                      threshold: float, known: dict[str, list[float]] | None = None,
+                      ) -> tuple[str, dict[str, list[float]]]:
     group = {s.path.name: s.doc_id for s in sources}
+    known = known or {}
+    # Documents that were already accepted come first, so a newly added file is compared
+    # with them and can never displace one that is already in the index.
+    ordered = sorted(verdicts, key=lambda v: v.source not in known)
     seen: dict[str, str] = {}                       # text hash -> first file with it
-    for v in verdicts:
+    for v in ordered:
         if v.text_sha256 is None:
             v.checks["uniqueness"] = Check("pass", "no usable text to compare")
             continue
@@ -286,12 +334,12 @@ def _check_uniqueness(verdicts: list[Verdict], sources: list[SourceDoc],
         for v in verdicts:
             if v.checks["uniqueness"].ok:
                 v.checks["uniqueness"].reason += "; near-duplicate check skipped (no embeddings)"
-        return "skipped: no embeddings available"
+        return "skipped: no embeddings available", dict(known)
 
-    vectors = {v.source: document_vector(texts[v.source], embed_fn)
-               for v in verdicts if v.source in texts}
+    vectors = {**known, **{v.source: document_vector(texts[v.source], embed_fn)
+                           for v in verdicts if v.source in texts}}
     retained: set[str] = set()                      # earlier documents that stay unique
-    for v in verdicts:
+    for v in ordered:
         if v.source not in vectors:
             continue
         best_any: tuple[float, str] | None = None
@@ -330,7 +378,7 @@ def _check_uniqueness(verdicts: list[Verdict], sources: list[SourceDoc],
                         f"compared with this one); {overall}")
             v.checks["uniqueness"] = Check("pass", f"no exact duplicate; {note} "
                                                    f"(threshold {threshold})")
-    return "done"
+    return "done", vectors
 
 
 def _check_recency(verdicts: list[Verdict], sources: list[SourceDoc]) -> None:

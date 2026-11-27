@@ -211,6 +211,73 @@ Limits of this calibration:
   Batch A report above predates them and does not have them; the 35 OCR pages in the
   Assignment 02 index come from that earlier measurement, not from this report.
 
+## Incremental update and document lifecycle
+
+`incremental.py` (Assignment 03, Part A2; paper 4.2.3 and 4.2.4). With verification on (the
+default) the Job ingests incrementally; `VERIFY_ENABLED=false` keeps the Assignment 02 full
+rebuild unchanged, and `--full-rebuild` forces it.
+
+**State.** `index-state.json` in `STATE_DIR` records, for every indexed document: the stable
+document id (the explicit `doc_id`, else the file name), the file sha256, the text hash, the
+document vector, the version, the chunk ids and the status (`active` or `archived`). Chunks
+carry `doc_id` and `content_hash` in their metadata. The file is written atomically and only
+after the store has been checked.
+
+**Full or incremental.** The first run, a missing collection, or a changed collection name,
+embedding model, chunk size or overlap builds the whole index through the staging swap of
+`store.py` (ADR 0001). Otherwise only what changed is touched:
+
+| Case | What happens | Embeds |
+| --- | --- | --- |
+| Unchanged file (same sha256) | Not extracted, verified or embedded again. Only changed metadata is updated in place. | 0 chunks, 0 verification texts |
+| Added file | Verified, chunked and embedded; chunks upserted. | its chunks |
+| Modified file | Its chunks are upserted and its old chunks that no longer exist are deleted. Other documents are untouched. | its chunks |
+| Deleted file | All chunks with that `source` are deleted, then counted per document. | 0 |
+| Rejected by verification | Quarantined (A1) and never indexed. A known document replaced by a rejected version loses its chunks. | 0 |
+| Superseded version | Chunks stay with `superseded=True`, which retrieval already excludes; a copy of the file goes to `ARCHIVE_DIR/<doc id>/<version>/`. | 0 |
+
+Newly added files are compared against documents already accepted, never the other way
+round, so a new arrival cannot displace an indexed document.
+
+**Proof of no orphans.** After applying changes the Job counts chunks per document in the
+store (`count_chunks`) against the state and stops with an error if any differ, or if the
+store holds a source the state does not know. A failed earlier run that left stray chunks is
+healed the same way on the next run.
+
+**Archive and restore.** `python -m pipeline.run --restore FILE` makes an archived version
+active and archives the other versions that share its `doc_id` (a rollback);
+`--archive FILE` archives one document. While the chunks are still indexed both only flip
+`superseded` on them, so nothing is embedded again, and both are locked: later runs keep the
+choice until the file changes. Every archived version is also copied to `ARCHIVE_DIR` with a
+`<file>.meta.json` sidecar (its title, version and `doc_id`). If the file has since left the
+lake, its chunks were deleted with it; `--restore` then copies the archived file back into the
+lake, lists it in `_index.json` when the lake has one, ingests it again (verified and
+embedded like a new document) and makes it the active version. A document deleted while
+active has no archive copy and cannot be restored; archive first.
+
+**Cache invalidation.** The API's semantic cache keys on the collection's `index_id` (ADR
+0003). Any run that changes what is indexed, including archive and restore, gives the
+collection a new `index_id`; a run that changes nothing keeps it. `ChromaRetriever.index_id()`
+reads the collection metadata on every call (one small request to Chroma per question), not
+through the 30 second `METADATA_TTL` used for the pin check, so a cached answer is never served
+after the index changed. The cost is that one request, including on cache hits.
+
+**After an interrupted run.** The state file is written only after the store has been checked,
+so a run that dies halfway leaves the old state and a store that is partly ahead of it. The
+next run redoes the changes idempotently (upserts, deletes by source) and ends consistent;
+until it does, a changed `index_id` may not yet have been published, so cached answers from
+before the interrupted run can still be served.
+
+**Counts.** Every run writes `ingest-<UTC timestamp>.json` to `REPORT_DIR` with the number
+and names of documents added, changed, unchanged, deleted, rejected, newly archived and
+restored, and the chunks embedded, upserted, deleted and metadata-updated, the verification
+texts embedded, the orphans removed, the per-document chunk counts and the `index_id`.
+
+**Collection metadata.** Updating a collection's metadata in Chroma drops the legacy
+`hnsw:space` key from it. The distance function lives in the collection's configuration and
+stays cosine (checked against a real Chroma 1.0.12 server: a vector scaled by two had
+distance 0); the API's pin check reads only `embed_model` and `dimension`, which are kept.
+
 ## Chunking
 
 `chunk.py`. Unit: a **token is a whitespace-separated word**.

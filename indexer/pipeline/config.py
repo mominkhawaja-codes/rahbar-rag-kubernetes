@@ -25,6 +25,10 @@ class IndexerSettings:
     near_dup_threshold: float = 0.98   # document-level cosine at or above this is a near-duplicate
     min_chars: int = 200               # less extracted text than this counts as empty
     verify_enabled: bool = True
+    # Part A2: the persistent document state and the archive of superseded versions. Like
+    # the quarantine they default to a writable temp location; Part F mounts a PVC here.
+    state_dir: str = ""
+    archive_dir: str = ""
 
 
 def get_settings() -> IndexerSettings:
@@ -43,4 +47,6 @@ def get_settings() -> IndexerSettings:
         near_dup_threshold=float(os.environ.get("NEAR_DUP_THRESHOLD", 0.98)),
         min_chars=int(os.environ.get("MIN_CHARS", 200)),
         verify_enabled=os.environ.get("VERIFY_ENABLED", "true").lower() != "false",
+        state_dir=os.environ.get("STATE_DIR", os.path.join(scratch, "state")),
+        archive_dir=os.environ.get("ARCHIVE_DIR", os.path.join(scratch, "archive")),
     )

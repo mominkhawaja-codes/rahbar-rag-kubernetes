@@ -47,6 +47,8 @@ class Chunk:
     page: int
     doc_version: str
     superseded: bool
+    doc_id: str = ""          # stable document id (Part A2); empty for the dummy index
+    content_hash: str = ""    # sha256 of the source file this chunk came from
 
     def metadata(self) -> dict[str, str | int | bool]:
         """Chroma metadata values must be str, int, float or bool."""
@@ -56,4 +58,6 @@ class Chunk:
             "page": self.page,
             "doc_version": self.doc_version,
             "superseded": self.superseded,
+            **({"doc_id": self.doc_id} if self.doc_id else {}),
+            **({"content_hash": self.content_hash} if self.content_hash else {}),
         }

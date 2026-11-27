@@ -23,7 +23,7 @@ from .config import IndexerSettings, get_settings
 from .models import Chunk, Document, SourceDoc
 
 if TYPE_CHECKING:
-    from .verify import VerificationRun
+    from .verify import EmbedFn, PriorDoc, VerificationRun
 
 
 def log(msg: str, **fields: object) -> None:
@@ -100,7 +100,8 @@ def discover(corpus_dir: str) -> list[tuple[Path, str, bool]]:
 
 
 def run_verification(settings: IndexerSettings, sources: list[SourceDoc], apply: bool,
-                     use_embeddings: bool) -> "VerificationRun":
+                     use_embeddings: bool, embed_fn: "EmbedFn | None" = None,
+                     prior: "dict[str, PriorDoc] | None" = None) -> "VerificationRun":
     """Verify the documents; with `apply`, move failures to quarantine and write the report."""
     from .clean import clean
     from .embed import embed
@@ -111,8 +112,9 @@ def run_verification(settings: IndexerSettings, sources: list[SourceDoc], apply:
         sources,
         extract_fn=lambda s: extract(str(s.path), s.doc_version or "unknown", s.superseded),
         clean_fn=clean,
-        embed_fn=(lambda texts: embed(texts, settings)) if use_embeddings else None,
-        min_chars=settings.min_chars, near_dup_threshold=settings.near_dup_threshold)
+        embed_fn=(embed_fn or (lambda texts: embed(texts, settings))) if use_embeddings else None,
+        min_chars=settings.min_chars, near_dup_threshold=settings.near_dup_threshold,
+        prior=prior)
     if apply:
         quarantine(run, settings.quarantine_dir)
         report = write_report(run, settings.report_dir, {
@@ -178,7 +180,23 @@ def build_chunks(settings: IndexerSettings, apply: bool = True,
     return all_chunks, totals
 
 
-def run_pipeline(settings: IndexerSettings) -> int:
+def run_pipeline(settings: IndexerSettings, force_full: bool = False) -> int:
+    """Index the corpus. With verification on (the default) this is the incremental ingest
+    of incremental.py; VERIFY_ENABLED=false keeps the Assignment 02 full rebuild unchanged."""
+    if settings.verify_enabled:
+        from .incremental import ingest
+
+        summary = ingest(settings, force_full=force_full)
+        report = _write_ingest_report(settings, summary)
+        log("ingest finished", mode=summary["mode"], reason=summary["reason"],
+            documents={k: (len(v) if isinstance(v, list) else v)
+                       for k, v in summary["documents"].items()},
+            chunks={k: v for k, v in summary["chunks"].items() if k != "by_document"},
+            verification_embeddings=summary["verification_embeddings"],
+            orphans_removed=summary["orphans_removed"], index_id=summary["index_id"],
+            index_id_changed=summary["index_id_changed"], report=str(report))
+        return int(summary["chunks"]["total_after"])
+
     from .embed import embed, embedding_text
     from .store import store
 
@@ -188,6 +206,20 @@ def run_pipeline(settings: IndexerSettings) -> int:
     log("embedded", vectors=len(vectors), dimension=len(vectors[0]) if vectors else 0,
         embed_model=settings.embed_model)
     return store(all_chunks, vectors, settings)
+
+
+def _write_ingest_report(settings: IndexerSettings, summary: dict) -> Path:
+    out = Path(settings.report_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    stamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
+    path, n = out / f"ingest-{stamp}.json", 1
+    while path.exists():
+        n += 1
+        path = out / f"ingest-{stamp}-{n}.json"
+    body = {"timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "collection": settings.collection, "embed_model": settings.embed_model, **summary}
+    path.write_text(json.dumps(body, indent=2, ensure_ascii=False), encoding="utf-8")
+    return path
 
 
 def _amplification(totals: dict[str, int]) -> float:
@@ -236,6 +268,12 @@ def main() -> int:
                         help="run only the verification stage and write its report")
     parser.add_argument("--no-quarantine", action="store_true",
                         help="with --verify-only, report failures but do not move any file")
+    parser.add_argument("--full-rebuild", action="store_true",
+                        help="ignore the saved state and rebuild the whole index")
+    parser.add_argument("--restore", metavar="FILE",
+                        help="make this archived version active (archives its sibling versions)")
+    parser.add_argument("--archive", metavar="FILE",
+                        help="archive this document: exclude it from retrieval, keep its chunks")
     parser.add_argument("--show", type=int, default=0, help="with --dry-run, print N chunks")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -245,6 +283,15 @@ def main() -> int:
         return 0
     if args.verify_only:
         return verify_only(settings, move=not args.no_quarantine)
+    if args.restore or args.archive:
+        from .incremental import ARCHIVED, restore_from_archive, set_document_status
+
+        if args.restore:
+            result = restore_from_archive(settings, args.restore)
+        else:
+            result = set_document_status(settings, args.archive, ARCHIVED)
+        log("document status changed", **result)
+        return 0
     log("indexer starting", dummy=args.dummy, embed_model=settings.embed_model,
         collection=settings.collection, chroma=f"{settings.chroma_host}:{settings.chroma_port}",
         pod=os.environ.get("HOSTNAME", "-"))
@@ -256,7 +303,7 @@ def main() -> int:
 
             count = write_dummy_index(settings, get_client(settings))
         else:
-            count = run_pipeline(settings)
+            count = run_pipeline(settings, force_full=args.full_rebuild)
     except NotImplementedError as exc:
         log("indexer stage not implemented yet", error=str(exc))
         return 2
