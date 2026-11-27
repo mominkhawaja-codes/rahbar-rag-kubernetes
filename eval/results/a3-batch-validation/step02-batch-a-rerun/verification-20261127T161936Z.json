@@ -1,0 +1,420 @@
+{
+  "run": {
+    "timestamp": "2026-11-27T16:19:36Z",
+    "near_duplicate_check": "done",
+    "corpus_dir": "E:/rahbar-a3-work/batch_a/lake",
+    "quarantine_dir": "E:/rahbar-a3-work/batch_a/quarantine",
+    "embed_model": "nomic-embed-text",
+    "min_chars": 200,
+    "near_dup_threshold": 0.98
+  },
+  "summary": {
+    "documents": 9,
+    "actions": {
+      "index": 9,
+      "supersede": 0,
+      "quarantine": 0
+    },
+    "failed_checks": {
+      "quality": 0,
+      "completeness": 0,
+      "recency": 0,
+      "uniqueness": 0
+    },
+    "indexed_versions": {
+      "current": 8,
+      "superseded": 1
+    },
+    "documents_with_warnings": 0,
+    "ocr_pages": 35
+  },
+  "documents": [
+    {
+      "source": "undergraduate-academic-rules-aug-2023.pdf",
+      "path": "E:\\rahbar-a3-work\\batch_a\\lake\\undergraduate-academic-rules-aug-2023.pdf",
+      "doc_id": null,
+      "title": "Undergraduate Academic Rules (Aug 2023)",
+      "doc_version": "2023-08",
+      "declared_superseded": true,
+      "file_sha256": "cddfe1f5e9770132e27d686abd1c2e6742ef4732f0c2f431ed514bc1691d2004",
+      "text_sha256": "3d89a983c9a4e88c70a69c090dce0fe7f5bdc8901b2a336fa1cb39580bfa4be5",
+      "pages": 25,
+      "characters": 33061,
+      "ocr_pages": 23,
+      "ocr_pages_empty": 0,
+      "letter_ratio": 0.924,
+      "checks": {
+        "quality": {
+          "status": "pass",
+          "reason": "file unchanged since it was last verified; not extracted again"
+        },
+        "completeness": {
+          "status": "pass",
+          "reason": "file unchanged; title and version present"
+        },
+        "uniqueness": {
+          "status": "pass",
+          "reason": "no exact duplicate; no earlier retained document to compare with (later documents are compared with this one); nearest document overall: prospectus-2026-academic-rules-and-regulations.pdf at 0.9540 (threshold 0.98)"
+        },
+        "recency": {
+          "status": "pass",
+          "reason": "marked superseded in its source metadata; kept for archival"
+        }
+      },
+      "warnings": [],
+      "version_status": "superseded",
+      "superseded_by": null,
+      "action": "index",
+      "nearest": {
+        "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+        "cosine": 0.954
+      },
+      "quarantined_to": null,
+      "quarantine_error": null
+    },
+    {
+      "source": "academic-rules-handbook-jun-2026.pdf",
+      "path": "E:\\rahbar-a3-work\\batch_a\\lake\\academic-rules-handbook-jun-2026.pdf",
+      "doc_id": null,
+      "title": "Academic Rules Handbook (Jun 2026)",
+      "doc_version": "2026-06",
+      "declared_superseded": false,
+      "file_sha256": "4cfee3e191b84aeb9168f17656c7642212ff52b90f2780d028b33c154aa74b62",
+      "text_sha256": "0f53a7dbdd154586e68b3f1b75154412ac9119715be49f2ad0b193d21c9440d9",
+      "pages": 55,
+      "characters": 58965,
+      "ocr_pages": 2,
+      "ocr_pages_empty": 0,
+      "letter_ratio": 0.944,
+      "checks": {
+        "quality": {
+          "status": "pass",
+          "reason": "file unchanged since it was last verified; not extracted again"
+        },
+        "completeness": {
+          "status": "pass",
+          "reason": "file unchanged; title and version present"
+        },
+        "uniqueness": {
+          "status": "pass",
+          "reason": "no exact duplicate; no earlier retained document to compare with (later documents are compared with this one); nearest document overall: student-handbook-jun-2026.pdf at 0.9576 (threshold 0.98)"
+        },
+        "recency": {
+          "status": "pass",
+          "reason": "no other version of this document"
+        }
+      },
+      "warnings": [],
+      "version_status": "current",
+      "superseded_by": null,
+      "action": "index",
+      "nearest": {
+        "source": "student-handbook-jun-2026.pdf",
+        "cosine": 0.9576
+      },
+      "quarantined_to": null,
+      "quarantine_error": null
+    },
+    {
+      "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+      "path": "E:\\rahbar-a3-work\\batch_a\\lake\\prospectus-2026-academic-rules-and-regulations.pdf",
+      "doc_id": null,
+      "title": "Prospectus 2026 - Academic Rules and Regulations",
+      "doc_version": "2026",
+      "declared_superseded": false,
+      "file_sha256": "a7e7f6896a59eb9413c9e8826e6c4c018ebe52045d10cebfcba92ded10a3174a",
+      "text_sha256": "95bbe0efacbddae86d50bc6d0303fea841b0a24a74d722202fbfc0e88a31143a",
+      "pages": 5,
+      "characters": 20683,
+      "ocr_pages": 0,
+      "ocr_pages_empty": 0,
+      "letter_ratio": 0.951,
+      "checks": {
+        "quality": {
+          "status": "pass",
+          "reason": "file unchanged since it was last verified; not extracted again"
+        },
+        "completeness": {
+          "status": "pass",
+          "reason": "file unchanged; title and version present"
+        },
+        "uniqueness": {
+          "status": "pass",
+          "reason": "no exact duplicate; highest similarity to an earlier retained document: academic-rules-handbook-jun-2026.pdf at 0.9016; nearest document overall: undergraduate-academic-rules-aug-2023.pdf at 0.9540 (threshold 0.98)"
+        },
+        "recency": {
+          "status": "pass",
+          "reason": "no other version of this document"
+        }
+      },
+      "warnings": [],
+      "version_status": "current",
+      "superseded_by": null,
+      "action": "index",
+      "nearest": {
+        "source": "undergraduate-academic-rules-aug-2023.pdf",
+        "cosine": 0.954
+      },
+      "quarantined_to": null,
+      "quarantine_error": null
+    },
+    {
+      "source": "student-handbook-jun-2026.pdf",
+      "path": "E:\\rahbar-a3-work\\batch_a\\lake\\student-handbook-jun-2026.pdf",
+      "doc_id": null,
+      "title": "Student Handbook (Jun 2026)",
+      "doc_version": "2026-06",
+      "declared_superseded": false,
+      "file_sha256": "717eb4b8d37e50185ffe952735c08ef19edd16074d547f10ebd22cf23da67c4d",
+      "text_sha256": "27a078d68b58abd67ff59d91be35c80216bf500d7fc665a351a3fbe31086ef06",
+      "pages": 62,
+      "characters": 68688,
+      "ocr_pages": 2,
+      "ocr_pages_empty": 0,
+      "letter_ratio": 0.957,
+      "checks": {
+        "quality": {
+          "status": "pass",
+          "reason": "file unchanged since it was last verified; not extracted again"
+        },
+        "completeness": {
+          "status": "pass",
+          "reason": "file unchanged; title and version present"
+        },
+        "uniqueness": {
+          "status": "pass",
+          "reason": "no exact duplicate; highest similarity to an earlier retained document: academic-rules-handbook-jun-2026.pdf at 0.9576; nearest document overall: academic-rules-handbook-jun-2026.pdf at 0.9576 (threshold 0.98)"
+        },
+        "recency": {
+          "status": "pass",
+          "reason": "no other version of this document"
+        }
+      },
+      "warnings": [],
+      "version_status": "current",
+      "superseded_by": null,
+      "action": "index",
+      "nearest": {
+        "source": "academic-rules-handbook-jun-2026.pdf",
+        "cosine": 0.9576
+      },
+      "quarantined_to": null,
+      "quarantine_error": null
+    },
+    {
+      "source": "annual-report-2019-20.pdf",
+      "path": "E:\\rahbar-a3-work\\batch_a\\lake\\annual-report-2019-20.pdf",
+      "doc_id": null,
+      "title": "Annual Report 2019-20",
+      "doc_version": "2019-20",
+      "declared_superseded": false,
+      "file_sha256": "4d1961e340b13273bb039805ab5fd5e2c7bd0144a5bd5870f2ce4da13becd650",
+      "text_sha256": "55d4589f78e6310b2396307317857fecfd7c5fb838f0077b65505692dc85176e",
+      "pages": 33,
+      "characters": 47044,
+      "ocr_pages": 0,
+      "ocr_pages_empty": 0,
+      "letter_ratio": 0.945,
+      "checks": {
+        "quality": {
+          "status": "pass",
+          "reason": "file unchanged since it was last verified; not extracted again"
+        },
+        "completeness": {
+          "status": "pass",
+          "reason": "file unchanged; title and version present"
+        },
+        "uniqueness": {
+          "status": "pass",
+          "reason": "no exact duplicate; highest similarity to an earlier retained document: student-handbook-jun-2026.pdf at 0.9140; nearest document overall: annual-report-2023-24.pdf at 0.9475 (threshold 0.98)"
+        },
+        "recency": {
+          "status": "pass",
+          "reason": "no other version of this document"
+        }
+      },
+      "warnings": [],
+      "version_status": "current",
+      "superseded_by": null,
+      "action": "index",
+      "nearest": {
+        "source": "annual-report-2023-24.pdf",
+        "cosine": 0.9475
+      },
+      "quarantined_to": null,
+      "quarantine_error": null
+    },
+    {
+      "source": "annual-report-2023-24.pdf",
+      "path": "E:\\rahbar-a3-work\\batch_a\\lake\\annual-report-2023-24.pdf",
+      "doc_id": null,
+      "title": "Annual Report 2023-24",
+      "doc_version": "2023-24",
+      "declared_superseded": false,
+      "file_sha256": "3c9d89e84af24df4b939f10e32c620a3877b276acea1db52f1aae4098e5c057a",
+      "text_sha256": "d22d3a2949f2b0f9972d0178462023ba8427609b7716800ec55cee5de005df20",
+      "pages": 85,
+      "characters": 195103,
+      "ocr_pages": 0,
+      "ocr_pages_empty": 0,
+      "letter_ratio": 0.94,
+      "checks": {
+        "quality": {
+          "status": "pass",
+          "reason": "file unchanged since it was last verified; not extracted again"
+        },
+        "completeness": {
+          "status": "pass",
+          "reason": "file unchanged; title and version present"
+        },
+        "uniqueness": {
+          "status": "pass",
+          "reason": "no exact duplicate; highest similarity to an earlier retained document: annual-report-2019-20.pdf at 0.9475; nearest document overall: annual-report-2019-20.pdf at 0.9475 (threshold 0.98)"
+        },
+        "recency": {
+          "status": "pass",
+          "reason": "no other version of this document"
+        }
+      },
+      "warnings": [],
+      "version_status": "current",
+      "superseded_by": null,
+      "action": "index",
+      "nearest": {
+        "source": "annual-report-2019-20.pdf",
+        "cosine": 0.9475
+      },
+      "quarantined_to": null,
+      "quarantine_error": null
+    },
+    {
+      "source": "fee-structure-page.html",
+      "path": "E:\\rahbar-a3-work\\batch_a\\lake\\fee-structure-page.html",
+      "doc_id": null,
+      "title": "Fee Structure page",
+      "doc_version": "2026-27",
+      "declared_superseded": false,
+      "file_sha256": "ec8872ae77cac7e96e20e6979933f36b00aaeb0ab3f668a2116e521c655e7b90",
+      "text_sha256": "e47163ea4e7e46ebced014bdd15d5ee46c65b21cf52a03f7f848e702c3d55431",
+      "pages": 1,
+      "characters": 3706,
+      "ocr_pages": 0,
+      "ocr_pages_empty": 0,
+      "letter_ratio": 0.875,
+      "checks": {
+        "quality": {
+          "status": "pass",
+          "reason": "file unchanged since it was last verified; not extracted again"
+        },
+        "completeness": {
+          "status": "pass",
+          "reason": "file unchanged; title and version present"
+        },
+        "uniqueness": {
+          "status": "pass",
+          "reason": "no exact duplicate; highest similarity to an earlier retained document: prospectus-2026-academic-rules-and-regulations.pdf at 0.8289; nearest document overall: undergraduate-academic-rules-aug-2023.pdf at 0.8385 (threshold 0.98)"
+        },
+        "recency": {
+          "status": "pass",
+          "reason": "no other version of this document"
+        }
+      },
+      "warnings": [],
+      "version_status": "current",
+      "superseded_by": null,
+      "action": "index",
+      "nearest": {
+        "source": "undergraduate-academic-rules-aug-2023.pdf",
+        "cosine": 0.8385
+      },
+      "quarantined_to": null,
+      "quarantine_error": null
+    },
+    {
+      "source": "grading-page.html",
+      "path": "E:\\rahbar-a3-work\\batch_a\\lake\\grading-page.html",
+      "doc_id": null,
+      "title": "Grading page",
+      "doc_version": "2026",
+      "declared_superseded": false,
+      "file_sha256": "66a995b4d8474e914d37bfa14755a5361f47327d5a7314f9b7ec15d9b6176e6e",
+      "text_sha256": "b177a725dac8b0355252873ff9cf57a69c8ad82a86ce2c46d974797364fe818f",
+      "pages": 1,
+      "characters": 4896,
+      "ocr_pages": 0,
+      "ocr_pages_empty": 0,
+      "letter_ratio": 0.883,
+      "checks": {
+        "quality": {
+          "status": "pass",
+          "reason": "file unchanged since it was last verified; not extracted again"
+        },
+        "completeness": {
+          "status": "pass",
+          "reason": "file unchanged; title and version present"
+        },
+        "uniqueness": {
+          "status": "pass",
+          "reason": "no exact duplicate; highest similarity to an earlier retained document: prospectus-2026-academic-rules-and-regulations.pdf at 0.8979; nearest document overall: prospectus-2026-academic-rules-and-regulations.pdf at 0.8979 (threshold 0.98)"
+        },
+        "recency": {
+          "status": "pass",
+          "reason": "no other version of this document"
+        }
+      },
+      "warnings": [],
+      "version_status": "current",
+      "superseded_by": null,
+      "action": "index",
+      "nearest": {
+        "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+        "cosine": 0.8979
+      },
+      "quarantined_to": null,
+      "quarantine_error": null
+    },
+    {
+      "source": "faculty-entrepreneurship-and-technical-start-ups-policy.pdf",
+      "path": "E:\\rahbar-a3-work\\batch_a\\lake\\faculty-entrepreneurship-and-technical-start-ups-policy.pdf",
+      "doc_id": "faculty-entrepreneurship-policy",
+      "title": "Faculty Entrepreneurship and Technical Start-ups Policy",
+      "doc_version": "2022-05",
+      "declared_superseded": false,
+      "file_sha256": "c2d5c7648d1593daf34d5c0596ede476e8984b0551830cc1690017e6e22f1359",
+      "text_sha256": "110b3d39633947d142a1fd030ba1ec9b66d581db01c00651920186a5268ae1df",
+      "pages": 8,
+      "characters": 11901,
+      "ocr_pages": 8,
+      "ocr_pages_empty": 0,
+      "letter_ratio": 0.946,
+      "checks": {
+        "quality": {
+          "status": "pass",
+          "reason": "file unchanged since it was last verified; not extracted again"
+        },
+        "completeness": {
+          "status": "pass",
+          "reason": "file unchanged; title and version present"
+        },
+        "uniqueness": {
+          "status": "pass",
+          "reason": "no exact duplicate; highest similarity to an earlier retained document: student-handbook-jun-2026.pdf at 0.8510; nearest document overall: student-handbook-jun-2026.pdf at 0.8510 (threshold 0.98)"
+        },
+        "recency": {
+          "status": "pass",
+          "reason": "no other version of this document"
+        }
+      },
+      "warnings": [],
+      "version_status": "current",
+      "superseded_by": null,
+      "action": "index",
+      "nearest": {
+        "source": "student-handbook-jun-2026.pdf",
+        "cosine": 0.851
+      },
+      "quarantined_to": null,
+      "quarantine_error": null
+    }
+  ]
+}

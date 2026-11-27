@@ -1,0 +1,2 @@
+cd indexer && python -m pipeline.run    (CORPUS_DIR=/e/rahbar-a3-work/batch_a/lake CHROMA_PORT=8801)
+python eval/tools/a3_index_audit.py --port 8801 --state-dir /e/rahbar-a3-work/batch_a/state --label batch-a-first-ingest --out /e/Semester 5/Software Construction and Development/rahbar-starter/rahbar-starter/eval/results/a3-batch-validation/step01-batch-a-ingest/audit.json --manifest /e/rahbar-a3-work/manifest-batch-a.json

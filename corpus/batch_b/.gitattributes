@@ -1,0 +1,3 @@
+# Batch B files are byte-exact test data: _index.json records their sha256 and size, and the
+# PDFs carry byte offsets. No line-ending conversion on any platform.
+* -text

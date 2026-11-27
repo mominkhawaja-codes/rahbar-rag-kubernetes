@@ -208,8 +208,10 @@ Limits of this calibration:
   real document passes with room to spare, and no failing real document exists to calibrate
   against until Batch B.
 - Reports written from now on carry `ocr_pages` and `ocr_pages_empty` per document. The
-  Batch A report above predates them and does not have them; the 35 OCR pages in the
-  Assignment 02 index come from that earlier measurement, not from this report.
+  Batch A report above predates them and does not have them. The formal ingestion of 27 Nov
+  (`eval/results/a3-batch-validation/step01-batch-a-ingest/verification-*.json`) has them: 35
+  OCR pages in total (2023 rules 23 of 25, rules handbook 2 of 55, student handbook 2 of 62,
+  faculty policy 8 of 8), none left empty, matching the 35 in the Assignment 02 index.
 
 ## Incremental update and document lifecycle
 

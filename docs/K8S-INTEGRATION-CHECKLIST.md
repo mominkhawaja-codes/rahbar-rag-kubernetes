@@ -2,10 +2,12 @@
 
 For whoever wires the verification stage and the incremental update into the cluster. It
 lists what the code needs; the manifests are not changed yet. Where a statement was
-measured, the source is named. **Nothing here was run on Kubernetes**: the code was tested
-natively on Windows with a stand-in for Chroma, plus one smoke run against a real Chroma
-1.0.12 server (`eval/results/a2-incremental/chroma-smoke-20261127.txt`). Section 6 is the
-test plan that still has to be carried out on the cluster.
+measured, the source is named. **Nothing here was run on Kubernetes.** The code was tested
+natively on Windows: unit tests with a stand-in for Chroma, a smoke run against a real Chroma
+1.0.12 server (`eval/results/a2-incremental/chroma-smoke-20261127.txt`), and a formal run of the
+real nine-document corpus and Batch B with real OCR and embeddings
+(`eval/results/a3-batch-validation/`, section 6.1). Section 6 is the test plan to repeat on the
+cluster, with the numbers to expect.
 
 Behaviour is described in `docs/PIPELINE.md` ("Verification" and "Incremental update and
 document lifecycle").
@@ -165,6 +167,31 @@ Run in this order on a fresh cluster. "Run the Job" means `kubectl create job
 
 Keep screenshots of the commands and outputs for the report appendix (Parts A and F).
 
+### 6.1 Numbers to expect (measured natively, 27 Nov 2026)
+
+From `eval/results/a3-batch-validation/` (the indexer's reports; same code, same inputs). The
+lake is staged with `python corpus/make_batch_b.py --stage-a LAKE` (Batch A plus an
+`_index.json` that gives the faculty policy `doc_id` `faculty-entrepreneurship-policy`) and later
+`--stage-b LAKE`; on the cluster do the same into the lake volume.
+
+| Test | Expected from the native run |
+| --- | --- |
+| 2 First Job, 9 Batch A files | `mode full`; 9 documents added; **612 chunks embedded**; 54 verification embeddings; nothing quarantined; 35 OCR pages (`ocr_pages` in the report); the 2023 rules archived (declared superseded); 361 s natively, mostly OCR and embedding on CPU |
+| 3 Second Job, nothing changed | `mode incremental`; 9 unchanged; **0 chunks, 0 verification embeddings**; `index_id_changed false`; 3 s |
+| 5 Batch B added | 5 added, 8 unchanged, **5 rejected** (2 exact duplicates, 1 near-duplicate at cosine 0.9919, 1 truncated PDF, 1 missing metadata), 1 newly archived (2022 faculty policy); **30 chunks embedded**; 44 verification embeddings; 7 chunk flags updated; store 612 -> **642 chunks**; new `index_id`; 31 s |
+| 9 `--restore` the 2022 policy, then the 2026 revision | each: 14 chunk flags updated, **0 embedded**, new `index_id`; active-only retrieval switches between the two |
+| 10 / repeat | after the restores, an unchanged Job embeds **0** and keeps the `index_id` |
+
+Run `python eval/tools/a3_index_audit.py --port <chroma port> --state-dir STATE` (through a
+port-forward to Chroma, or in a debug pod) after each Job: it exits 0 only if the store and the
+state agree (no orphans, no missing documents, no count or flag mismatch), and `--compare` with
+`step03-baseline/chunk-manifest-batch-a.json` shows the 612 Batch A chunks kept with identical
+ids and embeddings. The Job's own cluster timings and memory are not known yet.
+
+Observed on the native run and worth knowing before the cluster run: the two exact duplicates
+still had their text embedded for the near-duplicate check (12 of the 44 verification
+embeddings); this changes no outcome.
+
 ## 7. Known limits to keep in mind
 
 - Collection-metadata updates in Chroma drop the legacy `hnsw:space` key. The distance
@@ -176,5 +203,6 @@ Keep screenshots of the commands and outputs for the report appendix (Parts A an
   (`<file>.meta.json`); archive copies made before that sidecar existed have none.
 - Near-duplicate calibration margin is small (highest different-document pair 0.9576 against
   the 0.98 threshold) and was measured on nine documents only.
-- The real nine-document corpus has not been through the incremental path with real
-  embeddings; only the verification stage has (Batch A report).
+- The incremental path and Batch B were validated natively with real embeddings and OCR on
+  the real corpus (section 6.1), but not on Kubernetes: volumes, `fsGroup`, retries and the
+  Job's memory with the incremental path are untested there.
