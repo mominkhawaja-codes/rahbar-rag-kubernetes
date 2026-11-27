@@ -20,9 +20,10 @@ from typing import Any
 import httpx
 
 from ..config import Settings
-from ..embeddings import Embedder, OllamaEmbedder
+from ..embeddings import Embedder, OllamaEmbedder, query_prefix
 from ..errors import DependencyUnavailable
 from ..schemas import Passage
+from ..services import trace as tracing
 
 log = logging.getLogger("rahbar.retrieval")
 
@@ -104,9 +105,13 @@ class ChromaRetriever:
         return self._collection
 
     def index_id(self) -> str:
-        """Identifies the index build; the semantic cache keys on it (invalidation)."""
+        """Identifies the index build; the semantic cache keys on it (invalidation).
+
+        Read fresh on every call (one small request to Chroma), not through the 30 second
+        METADATA_TTL: the indexer changes `index_id` whenever the indexed content changes, and
+        a cached answer must never outlive that change by up to METADATA_TTL seconds."""
         try:
-            self.collection()
+            self.collection(refresh=True)
         except RetrievalUnavailable:
             return "unavailable"
         return str(self._meta.get("index_id") or self._meta.get("built_at") or "unknown")
@@ -117,7 +122,9 @@ class ChromaRetriever:
         problem = pin_problem(self._meta, self.settings.embed_model)
         if problem:
             raise EmbeddingPinMismatch(problem)
+        embed_started = time.perf_counter()
         vector = self.embedder.embed(question)
+        embed_ms = round((time.perf_counter() - embed_started) * 1000, 2)
         dimension = self._meta.get("dimension")
         if dimension is not None and int(dimension) != len(vector):
             raise EmbeddingPinMismatch(
@@ -125,6 +132,20 @@ class ChromaRetriever:
                 f"{self.settings.embed_model} returned {len(vector)}")
 
         where = None if wants_history(question) else {"superseded": False}
+        trace = tracing.current()
+        if trace is not None:
+            applied: dict[str, Any] = dict(where) if where is not None else {
+                "none": "the question asks about earlier versions, so superseded chunks are kept"}
+            trace.update("retrieval", filter=applied,
+                query_embedding_ms=embed_ms,
+                embedded_text=query_prefix(self.settings.embed_model) + question)
+            digest = getattr(self.embedder, "model_digest", None)
+            if callable(digest):
+                trace.update("embedding", model_digest=digest(),
+                             digest_source="Ollama /api/tags, read once per API process")
+            trace.update("collection", name=self.settings.collection,
+                         **{k: self._meta.get(k) for k in (
+                             "index_id", "built_at", "embed_model", "dimension", "chunks")})
         try:
             result = collection.query(query_embeddings=[vector], n_results=k, where=where,
                                       include=["documents", "metadatas", "distances"])
@@ -146,6 +167,9 @@ class ChromaRetriever:
                 section=str(meta.get("section", "")),
                 page=int(page) if isinstance(page, (int, float)) else None,
                 score=round(1.0 - float(distance), 4),
+                doc_id=str(meta["doc_id"]) if meta.get("doc_id") else None,
+                doc_version=str(meta["doc_version"]) if meta.get("doc_version") else None,
+                superseded=bool(meta["superseded"]) if "superseded" in meta else None,
             ))
         log.debug("retrieved", extra={"history": where is None, "n": len(passages)})
         return passages

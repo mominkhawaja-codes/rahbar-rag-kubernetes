@@ -1,0 +1,17 @@
+{"ts": "2026-11-27T16:13:28Z", "logger": "rahbar.indexer", "msg": "indexer starting", "dummy": false, "embed_model": "nomic-embed-text", "collection": "rahbar", "chroma": "localhost:8801", "pod": "-"}
+ocr
+ocr
+ocr
+ocr
+{"ts": "2026-11-27T16:18:09Z", "logger": "rahbar.indexer", "msg": "verification report written", "path": "E:\\Semester 5\\Software Construction and Development\\rahbar-starter\\rahbar-starter\\eval\\results\\a3-batch-validation\\step01-batch-a-ingest\\verification-20261127T161809Z.json"}
+{"ts": "2026-11-27T16:18:09Z", "logger": "rahbar.indexer", "msg": "verified", "source": "undergraduate-academic-rules-aug-2023.pdf", "action": "index", "failed": null, "quarantined_to": null, "quarantine_error": null}
+{"ts": "2026-11-27T16:18:09Z", "logger": "rahbar.indexer", "msg": "verified", "source": "academic-rules-handbook-jun-2026.pdf", "action": "index", "failed": null, "quarantined_to": null, "quarantine_error": null}
+{"ts": "2026-11-27T16:18:09Z", "logger": "rahbar.indexer", "msg": "verified", "source": "prospectus-2026-academic-rules-and-regulations.pdf", "action": "index", "failed": null, "quarantined_to": null, "quarantine_error": null}
+{"ts": "2026-11-27T16:18:09Z", "logger": "rahbar.indexer", "msg": "verified", "source": "student-handbook-jun-2026.pdf", "action": "index", "failed": null, "quarantined_to": null, "quarantine_error": null}
+{"ts": "2026-11-27T16:18:09Z", "logger": "rahbar.indexer", "msg": "verified", "source": "annual-report-2019-20.pdf", "action": "index", "failed": null, "quarantined_to": null, "quarantine_error": null}
+{"ts": "2026-11-27T16:18:09Z", "logger": "rahbar.indexer", "msg": "verified", "source": "annual-report-2023-24.pdf", "action": "index", "failed": null, "quarantined_to": null, "quarantine_error": null}
+{"ts": "2026-11-27T16:18:09Z", "logger": "rahbar.indexer", "msg": "verified", "source": "fee-structure-page.html", "action": "index", "failed": null, "quarantined_to": null, "quarantine_error": null}
+{"ts": "2026-11-27T16:18:09Z", "logger": "rahbar.indexer", "msg": "verified", "source": "grading-page.html", "action": "index", "failed": null, "quarantined_to": null, "quarantine_error": null}
+{"ts": "2026-11-27T16:18:09Z", "logger": "rahbar.indexer", "msg": "verified", "source": "faculty-entrepreneurship-and-technical-start-ups-policy.pdf", "action": "index", "failed": null, "quarantined_to": null, "quarantine_error": null}
+{"ts": "2026-11-27T16:19:28Z", "logger": "rahbar.indexer", "msg": "ingest finished", "mode": "full", "reason": "no earlier state: building the whole index", "documents": {"total": 9, "added": 9, "changed": 0, "unchanged": 0, "deleted": 0, "rejected": 0, "metadata_updated": 0, "newly_archived": 0, "restored": 0}, "chunks": {"embedded": 612, "upserted": 612, "deleted": 0, "metadata_updated": 0, "total_after": 612}, "verification_embeddings": 54, "orphans_removed": 0, "index_id": "da2497c88c1a", "index_id_changed": true, "report": "E:\\Semester 5\\Software Construction and Development\\rahbar-starter\\rahbar-starter\\eval\\results\\a3-batch-validation\\step01-batch-a-ingest\\ingest-20261127T161928Z.json"}
+{"ts": "2026-11-27T16:19:28Z", "logger": "rahbar.indexer", "msg": "indexer finished", "chunks": 612, "seconds": 360.0}

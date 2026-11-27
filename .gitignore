@@ -10,6 +10,9 @@ kubeconfig
 
 # Corpus files you did not write: commit corpus/MANIFEST.md and corpus/fetch.py instead
 corpus/raw/
+# Batch B: exact copies of official Batch A files, made by corpus/make_batch_b.py
+corpus/batch_b/fee-structure-page-2026-27-download.html
+corpus/batch_b/annual-report-2019-20-mirror.pdf
 fast-public-index.json
 
 # Python

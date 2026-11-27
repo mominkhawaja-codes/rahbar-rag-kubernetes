@@ -1,0 +1,22 @@
+# Part A2 smoke test against a real Chroma 1.0.12 server, 27 Nov 2026
+# Command: cd indexer && python tests/integration/chroma_smoke.py 8766
+# Isolated temp folders and collection; fake deterministic embeddings (no Ollama).
+# Output as printed, except: the per-run index ids and the temp folder are replaced by
+# <id> and <tmp>, and the indexer's JSON log lines are left out. An earlier run of the
+# same steps (before the script was tidied for lint) printed identical counts.
+
+1 first run                  mode=full        docs={'added': ['a.md', 'b.md', 'c.md']} chunks={'embedded': 12, 'upserted': 12, 'deleted': 0, 'metadata_updated': 0, 'total_after': 12} verif_emb=3 index_id=<id> space=cosine changed=True
+2 unchanged rerun            mode=incremental docs={'unchanged': ['a.md', 'b.md', 'c.md']} chunks={'embedded': 0, 'upserted': 0, 'deleted': 0, 'metadata_updated': 0, 'total_after': 12} verif_emb=0 index_id=<id> space=cosine changed=False
+   collection config space: {'space': 'cosine', 'ef_construction': 100, 'ef_search': 100, 'max_neighbors': 16, 'resize_factor': 1.2, 'sync_threshold': 1000}
+   distance of 2*stored vector (0 => cosine, large => L2): 0.0
+3 add d                      mode=incremental docs={'added': ['d.md'], 'unchanged': ['a.md', 'b.md', 'c.md']} chunks={'embedded': 4, 'upserted': 4, 'deleted': 0, 'metadata_updated': 0, 'total_after': 16} verif_emb=1 index_id=<id> space=None changed=True
+4 modify b                   mode=incremental docs={'changed': ['b.md'], 'unchanged': ['a.md', 'c.md', 'd.md']} chunks={'embedded': 2, 'upserted': 2, 'deleted': 2, 'metadata_updated': 0, 'total_after': 14} verif_emb=1 index_id=<id> space=None changed=True
+5 delete c                   mode=incremental docs={'unchanged': ['a.md', 'b.md', 'd.md'], 'deleted': ['c.md']} chunks={'embedded': 0, 'upserted': 0, 'deleted': 4, 'metadata_updated': 0, 'total_after': 10} verif_emb=0 index_id=<id> space=None changed=True
+   count by source c.md: 0 | sources: ['a.md', 'b.md', 'd.md']
+6 add two versions           mode=incremental docs={'added': ['a-new.md', 'a-old.md'], 'unchanged': ['a.md', 'b.md', 'd.md']} chunks={'embedded': 7, 'upserted': 7, 'deleted': 0, 'metadata_updated': 0, 'total_after': 17} verif_emb=2 index_id=<id> space=None changed=True
+   active sources: ['a-new.md', 'a.md', 'b.md', 'd.md']
+   restore a-old: {'a-old.md': 'active', 'a-new.md': 'archived'}
+   active sources: ['a-old.md', 'a.md', 'b.md', 'd.md']
+7 rerun after restore        mode=incremental docs={'unchanged': ['a-new.md', 'a-old.md', 'a.md', 'b.md', 'd.md']} chunks={'embedded': 0, 'upserted': 0, 'deleted': 0, 'metadata_updated': 0, 'total_after': 17} verif_emb=0 index_id=<id> space=None changed=False
+   query with superseded filter ok: ['a-old.md', 'd.md', 'b.md']
+cleaned up test collection; temp: <tmp>

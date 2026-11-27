@@ -1,0 +1,186 @@
+{
+  "label": "batch-b-before",
+  "collection": "rahbar",
+  "index_id": "da2497c88c1a",
+  "built_at": "2026-11-27T16:19:25Z",
+  "embed_model": "nomic-embed-text",
+  "dimension": 768,
+  "total_chunks": 612,
+  "sources": {
+    "academic-rules-handbook-jun-2026.pdf": {
+      "chunks": 74,
+      "superseded": [
+        false
+      ],
+      "doc_ids": [
+        "academic-rules-handbook-jun-2026.pdf"
+      ]
+    },
+    "annual-report-2019-20.pdf": {
+      "chunks": 81,
+      "superseded": [
+        false
+      ],
+      "doc_ids": [
+        "annual-report-2019-20.pdf"
+      ]
+    },
+    "annual-report-2023-24.pdf": {
+      "chunks": 297,
+      "superseded": [
+        false
+      ],
+      "doc_ids": [
+        "annual-report-2023-24.pdf"
+      ]
+    },
+    "faculty-entrepreneurship-and-technical-start-ups-policy.pdf": {
+      "chunks": 7,
+      "superseded": [
+        false
+      ],
+      "doc_ids": [
+        "faculty-entrepreneurship-policy"
+      ]
+    },
+    "fee-structure-page.html": {
+      "chunks": 7,
+      "superseded": [
+        false
+      ],
+      "doc_ids": [
+        "fee-structure-page.html"
+      ]
+    },
+    "grading-page.html": {
+      "chunks": 6,
+      "superseded": [
+        false
+      ],
+      "doc_ids": [
+        "grading-page.html"
+      ]
+    },
+    "prospectus-2026-academic-rules-and-regulations.pdf": {
+      "chunks": 35,
+      "superseded": [
+        false
+      ],
+      "doc_ids": [
+        "prospectus-2026-academic-rules-and-regulations.pdf"
+      ]
+    },
+    "student-handbook-jun-2026.pdf": {
+      "chunks": 89,
+      "superseded": [
+        false
+      ],
+      "doc_ids": [
+        "student-handbook-jun-2026.pdf"
+      ]
+    },
+    "undergraduate-academic-rules-aug-2023.pdf": {
+      "chunks": 16,
+      "superseded": [
+        true
+      ],
+      "doc_ids": [
+        "undergraduate-academic-rules-aug-2023.pdf"
+      ]
+    }
+  },
+  "state": {
+    "academic-rules-handbook-jun-2026.pdf": {
+      "status": "active",
+      "locked": false,
+      "doc_id": "academic-rules-handbook-jun-2026.pdf",
+      "doc_version": "2026-06",
+      "chunks": 74
+    },
+    "annual-report-2019-20.pdf": {
+      "status": "active",
+      "locked": false,
+      "doc_id": "annual-report-2019-20.pdf",
+      "doc_version": "2019-20",
+      "chunks": 81
+    },
+    "annual-report-2023-24.pdf": {
+      "status": "active",
+      "locked": false,
+      "doc_id": "annual-report-2023-24.pdf",
+      "doc_version": "2023-24",
+      "chunks": 297
+    },
+    "faculty-entrepreneurship-and-technical-start-ups-policy.pdf": {
+      "status": "active",
+      "locked": false,
+      "doc_id": "faculty-entrepreneurship-policy",
+      "doc_version": "2022-05",
+      "chunks": 7
+    },
+    "fee-structure-page.html": {
+      "status": "active",
+      "locked": false,
+      "doc_id": "fee-structure-page.html",
+      "doc_version": "2026-27",
+      "chunks": 7
+    },
+    "grading-page.html": {
+      "status": "active",
+      "locked": false,
+      "doc_id": "grading-page.html",
+      "doc_version": "2026",
+      "chunks": 6
+    },
+    "prospectus-2026-academic-rules-and-regulations.pdf": {
+      "status": "active",
+      "locked": false,
+      "doc_id": "prospectus-2026-academic-rules-and-regulations.pdf",
+      "doc_version": "2026",
+      "chunks": 35
+    },
+    "student-handbook-jun-2026.pdf": {
+      "status": "active",
+      "locked": false,
+      "doc_id": "student-handbook-jun-2026.pdf",
+      "doc_version": "2026-06",
+      "chunks": 89
+    },
+    "undergraduate-academic-rules-aug-2023.pdf": {
+      "status": "archived",
+      "locked": false,
+      "doc_id": "undergraduate-academic-rules-aug-2023.pdf",
+      "doc_version": "2023-08",
+      "chunks": 16
+    }
+  },
+  "active_sources": [
+    "academic-rules-handbook-jun-2026.pdf",
+    "annual-report-2019-20.pdf",
+    "annual-report-2023-24.pdf",
+    "faculty-entrepreneurship-and-technical-start-ups-policy.pdf",
+    "fee-structure-page.html",
+    "grading-page.html",
+    "prospectus-2026-academic-rules-and-regulations.pdf",
+    "student-handbook-jun-2026.pdf"
+  ],
+  "archived_sources": [
+    "undergraduate-academic-rules-aug-2023.pdf"
+  ],
+  "orphans": [],
+  "missing_from_store": [],
+  "count_mismatch": {},
+  "flag_mismatch": [],
+  "consistent": true,
+  "state_chunks": 612,
+  "compared_with": "E:\\rahbar-a3-work\\manifest-batch-a.json",
+  "comparison": {
+    "chunks_before": 612,
+    "chunks_after": 612,
+    "chunks_kept_with_identical_id_and_embedding": 612,
+    "embedding_changed_under_same_id": [],
+    "superseded_flag_changed_in_place": {},
+    "added_by_source": {},
+    "removed_by_source": {}
+  }
+}

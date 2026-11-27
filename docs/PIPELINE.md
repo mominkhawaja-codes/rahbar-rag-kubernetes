@@ -112,6 +112,174 @@ averaging under 60 characters.
 records them, and the exact-term questions ask for them. Heading markers and table pipes
 are kept for the same reason.
 
+## Verification
+
+`verify.py` runs after clean and before chunking (Assignment 03, Part A1; paper 4.2.2).
+Each document gets a pass or fail with a reason for four checks, and one outcome:
+`index` (all pass), `quarantine` (quality, completeness or uniqueness failed: the file is
+moved to `QUARANTINE_DIR` and is not indexed) or `supersede` (only recency failed: a newer
+version exists, so the document is kept and indexed with `superseded=True`). Each run writes
+`verification-<UTC timestamp>.json` to `REPORT_DIR`. `python -m pipeline.run --verify-only`
+runs this stage alone (`--no-quarantine` reports without moving files).
+
+| Check | Fails when | Threshold |
+| --- | --- | --- |
+| Quality | extraction raised an error; fewer than `MIN_CHARS` of text; replacement or control characters above 2 percent; letters below 40 percent of non-space characters | `MIN_CHARS=200` |
+| Completeness | title, version/date or page count missing; the file's sha256 or size differs from `_index.json`; a PDF without `%%EOF`; HTML without `</html>` | none |
+| Recency | an older version of a document that shares an explicit `doc_id` with a newer valid one | none |
+| Uniqueness | same sha256 of the normalised text as an earlier document; or document-embedding cosine at or above the threshold with a document that is not a version of it | `NEAR_DUP_THRESHOLD=0.98` |
+
+Nothing is invented: a title or version the source does not state is reported as missing.
+Titles come from `_index.json`, front matter, or a Markdown file's own first heading.
+
+**Weak hints are warnings.** Text that ends without punctuation is a hint of truncation, but
+many valid files end that way, so it goes into the verdict's `warnings` and never fails a
+document by itself. Only structural evidence (hash or size mismatch, no `%%EOF`, no
+`</html>`) fails completeness.
+
+**Current and superseded documents are told apart in the report.** Every verdict has
+`version_status` (`current` or `superseded`) and `superseded_by` (the newer file, when one
+was found). A source that marks itself `superseded: true` is `superseded` with no
+`superseded_by`. The summary counts `indexed_versions` (current against superseded, among
+documents that are not quarantined) and `documents_with_warnings`. Archiving and restoring
+superseded versions belong to A2.
+
+**A newer version is not a near-duplicate.** Two documents are treated as versions, and so
+skip the near-duplicate test, when they share a `doc_id`, or when their versions differ and
+the source marks one as superseded. Without either signal, no versions are guessed (the
+2019-20 and 2023-24 annual reports are different documents).
+
+### Calibration (27 Nov 2026, `nomic-embed-text`, real Ollama)
+
+A document is embedded as the mean of up to six evenly spaced 1,500-character windows.
+Embedding only the first page would score two handbooks with the same cover text as copies.
+
+Two measurements exist and they are kept apart:
+
+- **Final (OCR on):** the complete Batch A verification with Poppler 26.09.0 and OCR enabled.
+  Report: `eval/results/verification/batch-a/verification-20261127T121224Z.json` (log beside
+  it). Nine documents, 275 pages. All nine passed; nothing was quarantined.
+- **Earlier (OCR off):** a first pass on the same nine files before Poppler was installed.
+  Four PDFs contributed less text or failed extraction. Its report stayed in a temporary scratch folder outside the repository, so its
+  numbers are not backed by a committed file.
+
+Batch A cosines. The report stores each document's nearest other document and the highest
+score against earlier retained documents, not a full matrix, so a pair appears only where one
+of those fields recorded it; "not recorded" is not a zero.
+
+| Pair (different documents) | Final, OCR on | Earlier, OCR off |
+| --- | --- | --- |
+| Student handbook vs academic rules handbook | **0.9576** (highest) | 0.9643 |
+| Rules Aug 2023 vs prospectus 2026 | 0.9540 | not recorded |
+| Annual report 2019-20 vs 2023-24 | 0.9475 | 0.9475 |
+| Annual report 2019-20 vs student handbook | 0.9140 | not recorded |
+| Prospectus vs academic rules handbook | 0.9016 | 0.9095 |
+| Grading page vs prospectus | 0.8979 | 0.8979 |
+| Faculty policy vs student handbook | 0.8510 | not extracted (scanned) |
+| Fee page vs rules Aug 2023 | 0.8385 | not recorded |
+| Fee page vs prospectus | 0.8289 | 0.8289 |
+
+Edited-copy and version scores were measured earlier, on small documents that involve no OCR
+(two HTML pages and the CI fixtures), so the OCR change does not affect them:
+
+| Pair | Cosine |
+| --- | --- |
+| Grading page vs a lightly edited copy (6 numbers, 3 words, 1 sentence changed) | 0.9981 |
+| Fee page vs the same kind of edit | 0.9930 |
+| Fixture rules 2023 vs 2026 (two versions of one document) | 0.9907 |
+
+My first threshold, 0.95, wrongly quarantined the student handbook in the OCR-off pass
+(0.9643). **0.98** sits above the highest different-document pair (0.9576 with OCR, 0.9643
+without) and below the lightest edited copy (0.993). The last row shows why versions must be
+exempt: they score above the threshold.
+
+Quality figures from the final run: letters were 92 to 96 percent of characters in the nine
+PDFs and 88 percent in the two HTML pages (lowest 87.5 percent, the fee page); the shortest
+document had 3,706 characters. In the earlier OCR-off pass the 2023 rules had only 221
+characters (77.8 percent letters) and the faculty policy 0, which is what OCR fixed.
+
+Limits of this calibration:
+
+- Edited copies were generated by me from two small documents, not found in the wild.
+  A heavier edit that scores between 0.96 and 0.98 is not caught.
+- The margin to the highest different-document pair is small (0.9576 against 0.98). A new
+  document from the same domain could land closer; Batch B will test this.
+- `MIN_CHARS=200` and the 40 percent letter ratio are chosen limits, not fitted ones: every
+  real document passes with room to spare, and no failing real document exists to calibrate
+  against until Batch B.
+- Reports written from now on carry `ocr_pages` and `ocr_pages_empty` per document. The
+  Batch A report above predates them and does not have them. The formal ingestion of 27 Nov
+  (`eval/results/a3-batch-validation/step01-batch-a-ingest/verification-*.json`) has them: 35
+  OCR pages in total (2023 rules 23 of 25, rules handbook 2 of 55, student handbook 2 of 62,
+  faculty policy 8 of 8), none left empty, matching the 35 in the Assignment 02 index.
+
+## Incremental update and document lifecycle
+
+`incremental.py` (Assignment 03, Part A2; paper 4.2.3 and 4.2.4). With verification on (the
+default) the Job ingests incrementally; `VERIFY_ENABLED=false` keeps the Assignment 02 full
+rebuild unchanged, and `--full-rebuild` forces it.
+
+**State.** `index-state.json` in `STATE_DIR` records, for every indexed document: the stable
+document id (the explicit `doc_id`, else the file name), the file sha256, the text hash, the
+document vector, the version, the chunk ids and the status (`active` or `archived`). Chunks
+carry `doc_id` and `content_hash` in their metadata. The file is written atomically and only
+after the store has been checked.
+
+**Full or incremental.** The first run, a missing collection, or a changed collection name,
+embedding model, chunk size or overlap builds the whole index through the staging swap of
+`store.py` (ADR 0001). Otherwise only what changed is touched:
+
+| Case | What happens | Embeds |
+| --- | --- | --- |
+| Unchanged file (same sha256) | Not extracted, verified or embedded again. Only changed metadata is updated in place. | 0 chunks, 0 verification texts |
+| Added file | Verified, chunked and embedded; chunks upserted. | its chunks |
+| Modified file | Its chunks are upserted and its old chunks that no longer exist are deleted. Other documents are untouched. | its chunks |
+| Deleted file | All chunks with that `source` are deleted, then counted per document. | 0 |
+| Rejected by verification | Quarantined (A1) and never indexed. A known document replaced by a rejected version loses its chunks. | 0 |
+| Superseded version | Chunks stay with `superseded=True`, which retrieval already excludes; a copy of the file goes to `ARCHIVE_DIR/<doc id>/<version>/`. | 0 |
+
+Newly added files are compared against documents already accepted, never the other way
+round, so a new arrival cannot displace an indexed document.
+
+**Proof of no orphans.** After applying changes the Job counts chunks per document in the
+store (`count_chunks`) against the state and stops with an error if any differ, or if the
+store holds a source the state does not know. A failed earlier run that left stray chunks is
+healed the same way on the next run.
+
+**Archive and restore.** `python -m pipeline.run --restore FILE` makes an archived version
+active and archives the other versions that share its `doc_id` (a rollback);
+`--archive FILE` archives one document. While the chunks are still indexed both only flip
+`superseded` on them, so nothing is embedded again, and both are locked: later runs keep the
+choice until the file changes. Every archived version is also copied to `ARCHIVE_DIR` with a
+`<file>.meta.json` sidecar (its title, version and `doc_id`). If the file has since left the
+lake, its chunks were deleted with it; `--restore` then copies the archived file back into the
+lake, lists it in `_index.json` when the lake has one, ingests it again (verified and
+embedded like a new document) and makes it the active version. A document deleted while
+active has no archive copy and cannot be restored; archive first.
+
+**Cache invalidation.** The API's semantic cache keys on the collection's `index_id` (ADR
+0003). Any run that changes what is indexed, including archive and restore, gives the
+collection a new `index_id`; a run that changes nothing keeps it. `ChromaRetriever.index_id()`
+reads the collection metadata on every call (one small request to Chroma per question), not
+through the 30 second `METADATA_TTL` used for the pin check, so a cached answer is never served
+after the index changed. The cost is that one request, including on cache hits.
+
+**After an interrupted run.** The state file is written only after the store has been checked,
+so a run that dies halfway leaves the old state and a store that is partly ahead of it. The
+next run redoes the changes idempotently (upserts, deletes by source) and ends consistent;
+until it does, a changed `index_id` may not yet have been published, so cached answers from
+before the interrupted run can still be served.
+
+**Counts.** Every run writes `ingest-<UTC timestamp>.json` to `REPORT_DIR` with the number
+and names of documents added, changed, unchanged, deleted, rejected, newly archived and
+restored, and the chunks embedded, upserted, deleted and metadata-updated, the verification
+texts embedded, the orphans removed, the per-document chunk counts and the `index_id`.
+
+**Collection metadata.** Updating a collection's metadata in Chroma drops the legacy
+`hnsw:space` key from it. The distance function lives in the collection's configuration and
+stays cosine (checked against a real Chroma 1.0.12 server: a vector scaled by two had
+distance 0); the API's pin check reads only `embed_model` and `dimension`, which are kept.
+
 ## Chunking
 
 `chunk.py`. Unit: a **token is a whitespace-separated word**.

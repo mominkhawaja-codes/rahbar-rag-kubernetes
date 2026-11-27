@@ -3,6 +3,21 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
+
+
+@dataclass
+class SourceDoc:
+    """One file in the corpus plus what its source says about it. A field the source does
+    not state stays None: verification reports it as missing instead of inventing it."""
+
+    path: Path
+    doc_version: str | None
+    superseded: bool
+    title: str | None = None
+    doc_id: str | None = None      # explicit id shared by the versions of one document
+    sha256: str | None = None      # expected hash of the file, from _index.json
+    size: int | None = None        # expected size in bytes, from _index.json
 
 
 @dataclass
@@ -32,6 +47,8 @@ class Chunk:
     page: int
     doc_version: str
     superseded: bool
+    doc_id: str = ""          # stable document id (Part A2); empty for the dummy index
+    content_hash: str = ""    # sha256 of the source file this chunk came from
 
     def metadata(self) -> dict[str, str | int | bool]:
         """Chroma metadata values must be str, int, float or bool."""
@@ -41,4 +58,6 @@ class Chunk:
             "page": self.page,
             "doc_version": self.doc_version,
             "superseded": self.superseded,
+            **({"doc_id": self.doc_id} if self.doc_id else {}),
+            **({"content_hash": self.content_hash} if self.content_hash else {}),
         }

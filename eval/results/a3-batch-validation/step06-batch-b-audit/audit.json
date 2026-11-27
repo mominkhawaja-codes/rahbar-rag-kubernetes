@@ -1,0 +1,331 @@
+{
+  "label": "batch-b-after-ingest",
+  "collection": "rahbar",
+  "index_id": "6150bb31292d",
+  "built_at": "2026-11-27T16:20:27Z",
+  "embed_model": "nomic-embed-text",
+  "dimension": 768,
+  "total_chunks": 642,
+  "sources": {
+    "academic-rules-handbook-jun-2026.pdf": {
+      "chunks": 74,
+      "superseded": [
+        false
+      ],
+      "doc_ids": [
+        "academic-rules-handbook-jun-2026.pdf"
+      ]
+    },
+    "annual-report-2019-20.pdf": {
+      "chunks": 81,
+      "superseded": [
+        false
+      ],
+      "doc_ids": [
+        "annual-report-2019-20.pdf"
+      ]
+    },
+    "annual-report-2023-24.pdf": {
+      "chunks": 297,
+      "superseded": [
+        false
+      ],
+      "doc_ids": [
+        "annual-report-2023-24.pdf"
+      ]
+    },
+    "examination-appeals-procedure-2026.md": {
+      "chunks": 6,
+      "superseded": [
+        false
+      ],
+      "doc_ids": [
+        "examination-appeals-procedure-2026.md"
+      ]
+    },
+    "faculty-entrepreneurship-and-technical-start-ups-policy.pdf": {
+      "chunks": 7,
+      "superseded": [
+        true
+      ],
+      "doc_ids": [
+        "faculty-entrepreneurship-policy"
+      ]
+    },
+    "faculty-entrepreneurship-policy-2026-revision.pdf": {
+      "chunks": 7,
+      "superseded": [
+        false
+      ],
+      "doc_ids": [
+        "faculty-entrepreneurship-policy"
+      ]
+    },
+    "fee-structure-page.html": {
+      "chunks": 7,
+      "superseded": [
+        false
+      ],
+      "doc_ids": [
+        "fee-structure-page.html"
+      ]
+    },
+    "grading-page.html": {
+      "chunks": 6,
+      "superseded": [
+        false
+      ],
+      "doc_ids": [
+        "grading-page.html"
+      ]
+    },
+    "hostel-residence-policy-2026.html": {
+      "chunks": 6,
+      "superseded": [
+        false
+      ],
+      "doc_ids": [
+        "hostel-residence-policy-2026.html"
+      ]
+    },
+    "library-borrowing-rules-2026.pdf": {
+      "chunks": 6,
+      "superseded": [
+        false
+      ],
+      "doc_ids": [
+        "library-borrowing-rules-2026.pdf"
+      ]
+    },
+    "prospectus-2026-academic-rules-and-regulations.pdf": {
+      "chunks": 35,
+      "superseded": [
+        false
+      ],
+      "doc_ids": [
+        "prospectus-2026-academic-rules-and-regulations.pdf"
+      ]
+    },
+    "student-affairs-faq-2026.md": {
+      "chunks": 5,
+      "superseded": [
+        false
+      ],
+      "doc_ids": [
+        "student-affairs-faq-2026.md"
+      ]
+    },
+    "student-handbook-jun-2026.pdf": {
+      "chunks": 89,
+      "superseded": [
+        false
+      ],
+      "doc_ids": [
+        "student-handbook-jun-2026.pdf"
+      ]
+    },
+    "undergraduate-academic-rules-aug-2023.pdf": {
+      "chunks": 16,
+      "superseded": [
+        true
+      ],
+      "doc_ids": [
+        "undergraduate-academic-rules-aug-2023.pdf"
+      ]
+    }
+  },
+  "state": {
+    "academic-rules-handbook-jun-2026.pdf": {
+      "status": "active",
+      "locked": false,
+      "doc_id": "academic-rules-handbook-jun-2026.pdf",
+      "doc_version": "2026-06",
+      "chunks": 74
+    },
+    "annual-report-2019-20.pdf": {
+      "status": "active",
+      "locked": false,
+      "doc_id": "annual-report-2019-20.pdf",
+      "doc_version": "2019-20",
+      "chunks": 81
+    },
+    "annual-report-2023-24.pdf": {
+      "status": "active",
+      "locked": false,
+      "doc_id": "annual-report-2023-24.pdf",
+      "doc_version": "2023-24",
+      "chunks": 297
+    },
+    "examination-appeals-procedure-2026.md": {
+      "status": "active",
+      "locked": false,
+      "doc_id": "examination-appeals-procedure-2026.md",
+      "doc_version": "2026-09",
+      "chunks": 6
+    },
+    "faculty-entrepreneurship-and-technical-start-ups-policy.pdf": {
+      "status": "archived",
+      "locked": false,
+      "doc_id": "faculty-entrepreneurship-policy",
+      "doc_version": "2022-05",
+      "chunks": 7
+    },
+    "faculty-entrepreneurship-policy-2026-revision.pdf": {
+      "status": "active",
+      "locked": false,
+      "doc_id": "faculty-entrepreneurship-policy",
+      "doc_version": "2026-09",
+      "chunks": 7
+    },
+    "fee-structure-page.html": {
+      "status": "active",
+      "locked": false,
+      "doc_id": "fee-structure-page.html",
+      "doc_version": "2026-27",
+      "chunks": 7
+    },
+    "grading-page.html": {
+      "status": "active",
+      "locked": false,
+      "doc_id": "grading-page.html",
+      "doc_version": "2026",
+      "chunks": 6
+    },
+    "hostel-residence-policy-2026.html": {
+      "status": "active",
+      "locked": false,
+      "doc_id": "hostel-residence-policy-2026.html",
+      "doc_version": "2026-09",
+      "chunks": 6
+    },
+    "library-borrowing-rules-2026.pdf": {
+      "status": "active",
+      "locked": false,
+      "doc_id": "library-borrowing-rules-2026.pdf",
+      "doc_version": "2026-09",
+      "chunks": 6
+    },
+    "prospectus-2026-academic-rules-and-regulations.pdf": {
+      "status": "active",
+      "locked": false,
+      "doc_id": "prospectus-2026-academic-rules-and-regulations.pdf",
+      "doc_version": "2026",
+      "chunks": 35
+    },
+    "student-affairs-faq-2026.md": {
+      "status": "active",
+      "locked": false,
+      "doc_id": "student-affairs-faq-2026.md",
+      "doc_version": "2026-09",
+      "chunks": 5
+    },
+    "student-handbook-jun-2026.pdf": {
+      "status": "active",
+      "locked": false,
+      "doc_id": "student-handbook-jun-2026.pdf",
+      "doc_version": "2026-06",
+      "chunks": 89
+    },
+    "undergraduate-academic-rules-aug-2023.pdf": {
+      "status": "archived",
+      "locked": false,
+      "doc_id": "undergraduate-academic-rules-aug-2023.pdf",
+      "doc_version": "2023-08",
+      "chunks": 16
+    }
+  },
+  "active_sources": [
+    "academic-rules-handbook-jun-2026.pdf",
+    "annual-report-2019-20.pdf",
+    "annual-report-2023-24.pdf",
+    "examination-appeals-procedure-2026.md",
+    "faculty-entrepreneurship-policy-2026-revision.pdf",
+    "fee-structure-page.html",
+    "grading-page.html",
+    "hostel-residence-policy-2026.html",
+    "library-borrowing-rules-2026.pdf",
+    "prospectus-2026-academic-rules-and-regulations.pdf",
+    "student-affairs-faq-2026.md",
+    "student-handbook-jun-2026.pdf"
+  ],
+  "archived_sources": [
+    "faculty-entrepreneurship-and-technical-start-ups-policy.pdf",
+    "undergraduate-academic-rules-aug-2023.pdf"
+  ],
+  "orphans": [],
+  "missing_from_store": [],
+  "count_mismatch": {},
+  "flag_mismatch": [],
+  "consistent": true,
+  "state_chunks": 642,
+  "compared_with": "E:\\rahbar-a3-work\\manifest-batch-a.json",
+  "comparison": {
+    "chunks_before": 612,
+    "chunks_after": 642,
+    "chunks_kept_with_identical_id_and_embedding": 612,
+    "embedding_changed_under_same_id": [],
+    "superseded_flag_changed_in_place": {
+      "faculty-entrepreneurship-and-technical-start-ups-policy.pdf": {
+        "chunks": 7,
+        "superseded": "False -> True"
+      }
+    },
+    "added_by_source": {
+      "library-borrowing-rules-2026.pdf": 6,
+      "hostel-residence-policy-2026.html": 6,
+      "examination-appeals-procedure-2026.md": 6,
+      "faculty-entrepreneurship-policy-2026-revision.pdf": 7,
+      "student-affairs-faq-2026.md": 5
+    },
+    "removed_by_source": {}
+  },
+  "retrieval": {
+    "question": "For how many years can a faculty start-up use the university's intellectual property at no initial cost?",
+    "active_only (superseded == False)": [
+      {
+        "source": "faculty-entrepreneurship-policy-2026-revision.pdf",
+        "section": "2. Eligibility [2.1-2.3]",
+        "page": 1,
+        "superseded": false,
+        "distance": 0.1506
+      },
+      {
+        "source": "faculty-entrepreneurship-policy-2026-revision.pdf",
+        "section": "5. Reporting [5.1-5.2]",
+        "page": 1,
+        "superseded": false,
+        "distance": 0.2352
+      },
+      {
+        "source": "faculty-entrepreneurship-policy-2026-revision.pdf",
+        "section": "6. Other conditions [6.1-6.3]",
+        "page": 1,
+        "superseded": false,
+        "distance": 0.2474
+      }
+    ],
+    "no filter": [
+      {
+        "source": "faculty-entrepreneurship-policy-2026-revision.pdf",
+        "section": "2. Eligibility [2.1-2.3]",
+        "page": 1,
+        "superseded": false,
+        "distance": 0.1506
+      },
+      {
+        "source": "faculty-entrepreneurship-and-technical-start-ups-policy.pdf",
+        "section": "1. Purpose",
+        "page": 6,
+        "superseded": true,
+        "distance": 0.1725
+      },
+      {
+        "source": "faculty-entrepreneurship-and-technical-start-ups-policy.pdf",
+        "section": "1. Purpose",
+        "page": 2,
+        "superseded": true,
+        "distance": 0.1887
+      }
+    ]
+  }
+}

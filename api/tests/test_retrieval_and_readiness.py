@@ -101,6 +101,13 @@ def test_index_id_comes_from_the_collection_metadata() -> None:
     assert retriever.index_id() == "abc"
 
 
+def test_index_id_sees_an_index_change_at_once_not_after_the_metadata_ttl() -> None:
+    retriever, col = make(GOOD)
+    assert retriever.index_id() == "abc"
+    col.metadata = {**GOOD, "index_id": "def"}        # the indexer changed the content
+    assert retriever.index_id() == "def"              # no wait for METADATA_TTL: no stale cache
+
+
 class Unhealthy:
     name = "chroma"
 

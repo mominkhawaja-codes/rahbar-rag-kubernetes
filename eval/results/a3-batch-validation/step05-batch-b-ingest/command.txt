@@ -1,0 +1,1 @@
+cd indexer && python -m pipeline.run    (CORPUS_DIR=/e/rahbar-a3-work/batch_b/lake CHROMA_PORT=8802)

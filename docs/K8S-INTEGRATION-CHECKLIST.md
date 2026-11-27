@@ -1,0 +1,268 @@
+# Kubernetes integration checklist for Parts A1 and A2
+
+For whoever wires the verification stage and the incremental update into the cluster. It
+lists what the code needs; the manifests are not changed yet. Where a statement was
+measured, the source is named. **Nothing here was run on Kubernetes.** The code was tested
+natively on Windows: unit tests with a stand-in for Chroma, a smoke run against a real Chroma
+1.0.12 server (`eval/results/a2-incremental/chroma-smoke-20261127.txt`), and a formal run of the
+real nine-document corpus and Batch B with real OCR and embeddings
+(`eval/results/a3-batch-validation/`, section 6.1). Section 6 is the test plan to repeat on the
+cluster, with the numbers to expect.
+
+Behaviour is described in `docs/PIPELINE.md` ("Verification" and "Incremental update and
+document lifecycle").
+
+## 1. Environment variables
+
+All are read by `indexer/pipeline/config.py`. The existing ones already come from the
+`rahbar-config` ConfigMap through `envFrom`; the new ones need keys added there (or set on the
+Job) and must point at the volumes in section 2.
+
+| Variable | Default | Meaning | Set in the cluster to |
+| --- | --- | --- | --- |
+| `CORPUS_DIR` | `/corpus` | The data lake: documents and, for PDFs, `_index.json` | the lake volume mount |
+| `QUARANTINE_DIR` | `<tmp>/rahbar/quarantine` | Where rejected files are moved | quarantine mount |
+| `REPORT_DIR` | `<tmp>/rahbar/reports` | `verification-*.json` and `ingest-*.json` | reports mount |
+| `STATE_DIR` | `<tmp>/rahbar/state` | `index-state.json` (what is indexed) | **persistent** state mount |
+| `ARCHIVE_DIR` | `<tmp>/rahbar/archive` | Copies of superseded versions | archive mount |
+| `NEAR_DUP_THRESHOLD` | `0.98` | Document cosine at or above this is a near-duplicate | keep (calibrated) |
+| `MIN_CHARS` | `200` | Less extracted text than this counts as empty | keep |
+| `VERIFY_ENABLED` | `true` | `false` restores the Assignment 02 full rebuild, no verification | keep `true` |
+| `EMBED_MODEL`, `CHUNK_SIZE`, `CHUNK_OVERLAP`, `CHROMA_COLLECTION` | existing | A change of any of these forces one full rebuild | unchanged |
+| `OLLAMA_URL`, `CHROMA_HOST`, `CHROMA_PORT`, `OCR_ENABLED` | existing | unchanged | unchanged |
+
+`<tmp>` is the pod's temp directory. The Job's root filesystem is read-only and only `/tmp`
+is an `emptyDir`, so **leaving the four directories at their defaults loses the state, the
+quarantine, the archive and the reports when the pod ends**: the next run would rebuild
+everything. They must be set to persistent mounts.
+
+## 2. Persistent volumes
+
+One volume per kind of data is the simplest layout; one PVC with four sub-paths also works.
+Sizes below are rough: the real corpus is about 34 MB of files, the state file is under 1 MB
+for nine documents (each document stores a 768-number vector), and reports are small JSON.
+
+| Mount path (suggested) | Env var | Written by | Must survive pod restarts | Notes |
+| --- | --- | --- | --- | --- |
+| `/data/lake` | `CORPUS_DIR` | the Job (quarantine removes files from it) and whoever adds documents | yes | See "Lake contents" below |
+| `/data/quarantine` | `QUARANTINE_DIR` | the Job | yes | Rejected files, for review |
+| `/data/archive` | `ARCHIVE_DIR` | the Job | **yes** | Needed to restore a version whose file left the lake |
+| `/data/state` | `STATE_DIR` | the Job | **yes** | Losing it means one full rebuild, nothing else |
+| `/data/reports` | `REPORT_DIR` | the Job | yes | Evidence for the report; also read by the report scripts |
+
+- Run the container as the existing user (uid 10001, `runAsNonRoot`); set `fsGroup: 10001` so
+  the volumes are writable. Keep `readOnlyRootFilesystem: true`.
+- The Job and the CronJob must mount the **same** volumes, and `concurrencyPolicy: Forbid`
+  (already set on the CronJob) must stay: two runs at once would race on the state file.
+  With a ReadWriteOnce volume (minikube's default) a second pod on another node cannot mount
+  it anyway.
+- The API does not need these volumes. The Job stays the only writer to Chroma.
+
+**Lake contents.** Today the documents are baked into the image at `/corpus` and are
+read-only. For the lake to take new documents it has to be a volume that is seeded once:
+
+- PDFs and HTML need a `_index.json` next to them giving each file's `name` (its title),
+  `file`, `doc_version`, optionally `doc_id`, `superseded`, `sha256` and `bytes` (the format
+  `corpus/fetch.py` already writes). Without an entry, a PDF has no title or version and is
+  quarantined as incomplete. Markdown and text files carry the same fields as front matter
+  (`doc_version`, `superseded`, `doc_id`, `title`; the first `#` heading is used as the title).
+- If `_index.json` exists it is the only list of files: a file that is not listed is ignored.
+- Seed the volume from the image (an `initContainer` that copies `/corpus` when the volume is
+  empty) or with `kubectl cp`. Batch B is added the same way.
+- `doc_id` ties the versions of one document together. Without it no versions are guessed: an
+  older file is only treated as superseded when its source says `superseded: true`.
+
+## 3. Required dependencies
+
+Nothing new has to be installed. `incremental.py` and `verify.py` use only the standard
+library plus what the indexer already has (`chromadb-client==1.0.12`, `httpx`, `pdfplumber`,
+`pypdf`, `pytesseract`, `pdf2image`). The image already contains `tesseract-ocr` and
+`poppler-utils` (`indexer/Dockerfile`).
+
+- Chroma server image must stay at 1.0.12, the version the client is pinned to.
+- Ollama with `nomic-embed-text` must be reachable from the Job at `OLLAMA_URL`. The
+  verification stage also needs it (near-duplicate check), not only the chunk embedding, but
+  an unchanged rerun calls it zero times.
+- The NetworkPolicy `indexer-egress` already allows Chroma and Ollama; no change is needed.
+- Resources: the Job's current limit is 1536 Mi (peak measured for a full real-corpus build:
+  1129.8 MiB, `docs/ENGINEERING-NOTES.md`). The incremental path was **not** measured on the
+  cluster; unchanged documents are not extracted, so it should need no more. Re-measure when
+  Part F5 is done.
+
+## 4. Job behaviour
+
+Command stays `python -m pipeline.run` (the image default). Extra flags:
+
+| Command | What it does |
+| --- | --- |
+| `python -m pipeline.run` | Verify, then full or incremental ingest (see below). Exit 0 when the index and state are consistent |
+| `python -m pipeline.run --full-rebuild` | Ignore the state; rebuild through the staging swap |
+| `python -m pipeline.run --verify-only [--no-quarantine]` | Verification and its report only; needs Ollama but not Chroma |
+| `python -m pipeline.run --restore FILE` | Make an archived version active (from the archive if its file left the lake); archives sibling versions |
+| `python -m pipeline.run --archive FILE` | Exclude one document from retrieval, keep its chunks |
+| `python -m pipeline.run --dry-run` | Chunk statistics only; writes nothing |
+
+Normal run:
+
+1. Waits for Chroma (the existing `wait-for-chroma` init container).
+2. Reads the lake and `STATE_DIR/index-state.json`. No state, a missing collection or a
+   changed model, chunk size, overlap or collection name means a **full rebuild** through the
+   existing staging swap; otherwise it is **incremental**.
+3. Verifies new and changed files; unchanged files are skipped (no extraction, no embeddings).
+   Rejected files are moved to `QUARANTINE_DIR`; a verification report is written.
+4. Embeds and writes only new or changed documents, removes deleted or rejected ones, flips
+   `superseded` where versions changed, then checks per-document chunk counts against the
+   state. A mismatch fails the Job (non-zero exit) **before** the state file is written.
+5. Gives the collection a new `index_id` if anything changed, writes `index-state.json` and
+   `ingest-<timestamp>.json`, and logs `ingest finished` with the counts.
+
+Behaviour to rely on:
+
+- **Retry safe.** If a pod dies mid-update, the state file still describes the previous run,
+  and the retry (`backoffLimit`) redoes the work idempotently. Covered by
+  `test_interrupted_update_is_completed_by_the_next_run`.
+- **Exit status.** Non-zero when the run cannot finish: no documents, every document rejected,
+  an embedding-dimension mismatch, or the store disagreeing with the state. Rejecting some
+  documents is not a failure; read the report for that.
+- **Quarantine moves files out of the lake.** A lake mounted read-only turns that into a
+  recorded `quarantine_error`; the document is still not indexed. Mount it read-write.
+- **Cache invalidation.** A change gives a new `index_id`; the API reads it on every request,
+  so a changed index never serves cached answers (api change in section 5).
+- **Output to collect:** `REPORT_DIR/verification-*.json` and `ingest-*.json`.
+
+## 5. Deployment changes
+
+1. **PVCs and mounts** from section 2 on `k8s/base/indexer-job.yaml` and
+   `indexer-cronjob.yaml` (both), plus `fsGroup`.
+2. **ConfigMap keys** `QUARANTINE_DIR`, `REPORT_DIR`, `STATE_DIR`, `ARCHIVE_DIR` and
+   `CORPUS_DIR` (now the lake mount) in `k8s/base/configmap.yaml`.
+3. **Seeding** of the lake from the image or with `kubectl cp`, including `_index.json`.
+4. **Overlays.** The `ci` overlay's indexer uses the three fictional fixtures in `/fixtures`.
+   Verification passes them (checked with `--verify-only`: 3 accepted, none quarantined), so
+   the e2e evaluation does not need changes, but the CI Job also needs writable state and
+   report directories: an `emptyDir` is enough there.
+5. **API image.** Part D adds tracing (section 6.2). One line also changed: `ChromaRetriever.index_id()` now reads the collection
+   metadata on every call instead of every 30 seconds. This adds one small request to Chroma
+   per `/api/ask`, including cache hits. Rebuild and roll the API image so it carries this.
+6. **No change** to the Chroma StatefulSet, Redis, Services, Ingress or NetworkPolicies.
+
+## 6. Acceptance tests on the cluster
+
+Run in this order on a fresh cluster. "Run the Job" means `kubectl create job
+--from=cronjob/indexer` (or the Job manifest) and `kubectl logs job/<name>`.
+
+| # | Action | Expected |
+| --- | --- | --- |
+| 1 | Apply manifests; seed the lake with the nine Batch A documents | Pods ready; lake lists nine files and `_index.json` |
+| 2 | Run the Job | `mode: full`; no document quarantined; report in `REPORT_DIR`; `index-state.json` exists |
+| 3 | Run the Job again, nothing changed | `mode: incremental`; `chunks.embedded 0`; `verification_embeddings 0`; `index_id_changed false` |
+| 4 | Delete the Job pod while it is updating (after step 6) | Retry succeeds; counts consistent |
+| 5 | Copy Batch B into the lake and run the Job | Duplicates, near-duplicate, truncated, missing-metadata and injected files reported with reasons; failures in `QUARANTINE_DIR`; newer version indexed, older one archived |
+| 6 | Modify one file | Only that document's chunks embedded; `documents.changed` lists it |
+| 7 | Delete one file | `documents.deleted` lists it; per-document chunk count is 0 (also by `kubectl exec` into a debug pod querying Chroma) |
+| 8 | Ask the same question before and after step 6 or 7 | Second answer is not served from cache (`X-Cache: miss`); `index_id` differs |
+| 9 | `--restore` a superseded version, then a version whose file was deleted from the lake | Chunk flags flip with no embedding; the deleted one is copied back from `ARCHIVE_DIR` and re-embedded |
+| 10 | Restart the Job pod and the Chroma pod | State, archive, quarantine and reports are still there; the next run is a no-op |
+| 11 | Edit a threshold in the ConfigMap (`NEAR_DUP_THRESHOLD`) and rerun | Changes the verification outcome without rebuilding the image |
+
+Keep screenshots of the commands and outputs for the report appendix (Parts A and F).
+
+### 6.1 Numbers to expect (measured natively, 27 Nov 2026)
+
+From `eval/results/a3-batch-validation/` (the indexer's reports; same code, same inputs). The
+lake is staged with `python corpus/make_batch_b.py --stage-a LAKE` (Batch A plus an
+`_index.json` that gives the faculty policy `doc_id` `faculty-entrepreneurship-policy`) and later
+`--stage-b LAKE`; on the cluster do the same into the lake volume.
+
+| Test | Expected from the native run |
+| --- | --- |
+| 2 First Job, 9 Batch A files | `mode full`; 9 documents added; **612 chunks embedded**; 54 verification embeddings; nothing quarantined; 35 OCR pages (`ocr_pages` in the report); the 2023 rules archived (declared superseded); 361 s natively, mostly OCR and embedding on CPU |
+| 3 Second Job, nothing changed | `mode incremental`; 9 unchanged; **0 chunks, 0 verification embeddings**; `index_id_changed false`; 3 s |
+| 5 Batch B added | 5 added, 8 unchanged, **5 rejected** (2 exact duplicates, 1 near-duplicate at cosine 0.9919, 1 truncated PDF, 1 missing metadata), 1 newly archived (2022 faculty policy); **30 chunks embedded**; 44 verification embeddings; 7 chunk flags updated; store 612 -> **642 chunks**; new `index_id`; 31 s |
+| 9 `--restore` the 2022 policy, then the 2026 revision | each: 14 chunk flags updated, **0 embedded**, new `index_id`; active-only retrieval switches between the two |
+| 10 / repeat | after the restores, an unchanged Job embeds **0** and keeps the `index_id` |
+
+Run `python eval/tools/a3_index_audit.py --port <chroma port> --state-dir STATE` (through a
+port-forward to Chroma, or in a debug pod) after each Job: it exits 0 only if the store and the
+state agree (no orphans, no missing documents, no count or flag mismatch), and `--compare` with
+`step03-baseline/chunk-manifest-batch-a.json` shows the 612 Batch A chunks kept with identical
+ids and embeddings. The Job's own cluster timings and memory are not known yet.
+
+Observed on the native run and worth knowing before the cluster run: the two exact duplicates
+still had their text embedded for the near-duplicate check (12 of the 44 verification
+embeddings); this changes no outcome.
+
+## 6.2 Part D: traces, trace tool and monitoring (API Deployment)
+
+The API writes one JSON line per question (`api/app/services/trace.py`). Nothing is needed for
+the stdout copy; the file copy needs a volume.
+
+| Setting | Default | Set in the cluster to |
+| --- | --- | --- |
+| `TRACE_DIR` | empty (stdout only) | the trace volume mount, e.g. `/data/traces` |
+| `TRACE_STDOUT` | `true` | keep `true` (`kubectl logs` shows every trace, assignment F4) |
+
+- **Volume.** A PVC mounted read-write at `TRACE_DIR` on the **API Deployment** (all replicas),
+  `fsGroup: 10001`, and read by the report tools (a debug pod or the evaluation Job). Each pod
+  writes `traces-<UTC date>-<pod name>.jsonl` (the file name uses `HOSTNAME`, which Kubernetes
+  sets to the pod name), so replicas never append to the same file. With minikube's
+  ReadWriteOnce storage all replicas run on the one node, which is allowed; on a multi-node
+  cluster use ReadWriteMany or one volume per pod.
+- **Size.** A trace holds the full prompt (about 10 to 20 kB per answered question). Plan the
+  volume, or rotate files by date.
+- **No secrets.** Only listed settings are recorded; the API key and request headers never
+  are (tested). The trace does contain the student's question and the document text sent to
+  the model.
+- **No new dependencies**; the tools use the standard library and read the files only.
+- **Embedding version.** Each trace carries `embedding.model_digest`, Ollama's digest of the
+  embedding model, read once per API pod from `OLLAMA_URL/api/tags` (the NetworkPolicy already
+  allows the API to reach Ollama). If Ollama cannot answer, the field says `unavailable: ...`
+  and the API asks again at most every 5 minutes; it is never guessed.
+- **Encoding.** Trace files are UTF-8. The stdout copy is ASCII-escaped JSON (`\uXXXX`), so a
+  non-ASCII character in an answer cannot make the log write fail, whatever the container's
+  locale. (A Windows run lost one trace to exactly that before this was fixed.)
+- **Generation for the demo.** The dev overlay's hosted generator (Groq `openai/gpt-oss-20b`,
+  key in `rahbar-secret`) is what the grounded-answer and cache-hit demonstration needs: the
+  local `llama3.2:3b` gets the content right but its citations are rejected
+  (`eval/results/d-observability/README.md`).
+
+Acceptance commands (assignment D1 to D4 and F4):
+
+```
+kubectl -n rahbar logs deploy/api | grep '"rahbar.trace"' | tail -1          # a full trace on stdout
+curl -s -H 'X-Request-ID: demo-1' -H 'Content-Type: application/json'      -d '{"question": "How much does it cost to replace a lost student card?"}'      http://<ingress>/api/ask                                                  # trace id = demo-1
+kubectl -n rahbar exec <pod with the trace volume> --      python eval/tools/trace_show.py demo-1 --dir /data/traces               # D2: exact context and prompt
+kubectl -n rahbar exec <pod with the trace volume> --      python eval/tools/trace_summary.py --dir /data/traces --last 1h         # D3: window summary
+```
+
+(The tools are in the repository, not in the API image: copy them into a debug pod, run them in
+the evaluation Job's image, or `kubectl cp` the trace files out and run them locally.)
+
+Expected, from the native runs (final hosted run `eval/results/d-observability-hosted/`, Groq
+`openai/gpt-oss-20b`, 3 requests; also the local-model run in `eval/results/d-observability/`):
+
+| Request | Expected trace |
+| --- | --- |
+| "For how many years can a faculty start-up use the university's intellectual property at no initial cost?" | `outcome: answered` ("3 years.", valid citation); `cache.result: miss`; filter `{"superseded": false}`; top chunk from `faculty-entrepreneurship-policy-2026-revision.pdf` (0.8494); prompt with one model call; embedding digest `0a109f42...`; no guardrail actions |
+| The same question again | HTTP header `X-Cache: hit`; `cache.result: hit`, `served_from_trace_id` = the first request's id; retrieval, generation and citation check `skipped`; no prompt; `trace_show` prints the first request's context and prompt |
+| "How much does it cost to replace a lost student card?" | `answered` ("Rs. 500", valid citations); `student-affairs-faq-2026-md-0001` at rank 1 with `passage_injection_scan: flagged` and `output_injection_echo_check: passed` |
+
+Summary over these three: cache hit rate 0.3333, abstention rate 0.0, p95 total latency 2.6 s on
+the laptop, 1 injection attempt flagged. The cluster will differ in latency, not in the
+structure of the traces. Not yet done on the cluster: the trace volume, `kubectl logs` showing
+the trace lines, and running the tools there (assignment F4).
+
+## 7. Known limits to keep in mind
+
+- Collection-metadata updates in Chroma drop the legacy `hnsw:space` key. The distance
+  function stays cosine in the collection configuration (checked on 1.0.12); nothing reads the
+  old key.
+- A document deleted from the lake while **active** loses its chunks and has no archive copy.
+  Archive first (`--archive`) if it must be restorable. Only archived versions are restorable.
+- Restoring from the archive after `_index.json` changed re-lists the file from its sidecar
+  (`<file>.meta.json`); archive copies made before that sidecar existed have none.
+- Near-duplicate calibration margin is small (highest different-document pair 0.9576 against
+  the 0.98 threshold) and was measured on nine documents only.
+- The incremental path and Batch B were validated natively with real embeddings and OCR on
+  the real corpus (section 6.1), but not on Kubernetes: volumes, `fsGroup`, retries and the
+  Job's memory with the incremental path are untested there.

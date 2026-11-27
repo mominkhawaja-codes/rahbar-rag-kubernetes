@@ -1,0 +1,8 @@
+trace h-q2  2026-11-27T19:00:19.612Z  status=ok  outcome=answered
+query:      For how many years can a faculty start-up use the university's intellectual property at no initial cost?
+collection: rahbar  index_id=93481e3de295  built_at=None  embed_model=nomic-embed-text
+cache:      hit  (served from trace h-q1, similarity 1.0)
+answer:     3 years. [faculty-entrepreneurship-policy-2026-revision.pdf / 2. Eligibility [2.1-2.3]]
+
+No prompt was built for this request: the answer came from the cache.
+The trace h-q1 that produced it is not in traces/native-batch-b-hosted-run1.
