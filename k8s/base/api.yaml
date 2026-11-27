@@ -63,11 +63,12 @@ spec:
           startupProbe:
             httpGet: {path: /healthz, port: 8000}
             periodSeconds: 2
+            timeoutSeconds: 3
             failureThreshold: 30
           livenessProbe:
             httpGet: {path: /healthz, port: 8000}
-            periodSeconds: 10
-            timeoutSeconds: 2
+            periodSeconds: 20
+            timeoutSeconds: 5
             failureThreshold: 3
           readinessProbe:
             httpGet: {path: /readyz, port: 8000}
@@ -131,5 +132,10 @@ spec:
           type: Utilization
           averageUtilization: 70
   behavior:
+    scaleUp:
+      # Avoid a burst of cold starts competing with DNS and the control plane.
+      stabilizationWindowSeconds: 60
+      policies:
+        - {type: Pods, value: 1, periodSeconds: 60}
     scaleDown:
       stabilizationWindowSeconds: 300

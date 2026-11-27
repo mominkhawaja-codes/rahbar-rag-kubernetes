@@ -15,13 +15,15 @@ rollout. A cached answer must also never outlive the index it was built from.
   eviction, ClusterIP only. All API replicas share it, and a restarted Redis pod keeps
   its entries. `strategy: Recreate`, because the ReadWriteOnce volume can be mounted by
   one pod at a time.
-- **Match:** an exact normalised question match by key first, then cosine similarity of
-  question embeddings ≥ `CACHE_THRESHOLD` (0.95, measured: see below), scanning at most the newest
-  `CACHE_MAX_ENTRIES` entries of the current generation (`api/app/services/cache.py`).
+- **Match:** look up the exact normalised question first. Semantic reuse requires both
+  questions to match the same explicitly recognised intent and their canonical embeddings
+  to meet `CACHE_THRESHOLD` (0.95). Currently only reviewed phrasings of the unqualified
+  academic-warning CGPA threshold qualify. Questions with other wording or qualifiers
+  use exact matching. The scan is bounded by `CACHE_MAX_ENTRIES`.
 - **Invalidation:** every key contains a generation hash of the collection's `index_id`,
-  the embedding model, the LLM provider and model, the prompt version and the relevance
-  floor. A re-index changes `index_id`, so old answers stop matching at once and expire by
-  TTL (24 h). Nothing has to be flushed by hand.
+  the embedding model, the LLM provider and model, the prompt version, the relevance
+  floor and the cache policy version. A re-index or policy version change isolates the
+  old answers immediately, and they expire by TTL (24 h).
 - **Never cached:** abstentions, fallbacks, answers without a valid citation, follow-up
   questions.
 - **Contract change:** `AskResponse` gained `cached: bool = False`, and the route sets
@@ -50,7 +52,7 @@ rollout. A cached answer must also never outlive the index it was built from.
 - Watch: `rahbar_cache_total{result="hit"}` against `miss`, and false hits found in the
   threshold experiment (`docs/PIPELINE.md`, "Semantic cache").
 
-## Threshold measurement (8 Nov 2026)
+## Original cosine-only measurement (8 Nov 2026)
 Measured with the real model, not chosen by feel: `eval/cache_threshold.py` over 25
 labelled pairs, `nomic-embed-text`, a real Redis (workflow `cache-threshold`, run
 42517013627). Results and method are in `docs/PIPELINE.md`, "Semantic cache".
@@ -61,5 +63,14 @@ labelled pairs, `nomic-embed-text`, a real Redis (workflow `cache-threshold`, ru
 - **Consequence for this design:** at a safe threshold the semantic part of the cache adds
   nothing on this test set. All 8 paraphrases miss, and only exact or normalised repeats
   hit. With `nomic-embed-text`, paraphrases (0.735 to 0.939) and near misses (up to 0.933)
-  overlap. A cache that should also catch paraphrases needs more than a cosine threshold
-  over the question alone: for example, require the same top retrieved chunk ids as well.
+  overlap. The later above/below regression showed that questions with different answers
+  can also score well above 0.95, so semantic reuse now requires a recognised intent.
+
+## Guarded measurement (25 Nov 2026)
+
+The expanded set has 32 labelled pairs, including two follow-ups tested for cache bypass.
+At 0.95, cosine-only matching produced 3 correct hits, 1 false hit and 9 misses among
+equivalent pairs. Guarded matching produced 5 correct hits, 0 false hits and 7 misses
+among equivalent pairs. Redis agreed with all 30 measured lookup decisions and a new
+generation missed the old entry. The above/below pair scored 0.995664. The original
+academic-warning paraphrases scored 0.851503 before their reviewed intent was canonicalised.

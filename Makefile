@@ -6,6 +6,7 @@ NS ?= rahbar
 TAG ?= dev
 PY ?= python3
 VENV ?= .venv
+MINIKUBE_MEMORY ?= 3072
 BIN := $(abspath $(VENV))/bin
 # The Ingress address. On Linux this is the minikube IP. On macOS or Windows with the
 # docker driver, run `minikube tunnel` in another terminal and use INGRESS_IP=127.0.0.1.
@@ -13,7 +14,7 @@ INGRESS_IP ?= $(shell minikube ip 2>/dev/null)
 HOST ?= rahbar.local
 
 .DEFAULT_GOAL := help
-.PHONY: help install test lint dev cluster stage-corpus images apply secret index ask fetch eval eval-fixtures check dry-run
+.PHONY: help install test lint dev cluster stage-corpus app-images images apply secret index ask fetch eval eval-fixtures check dry-run
 
 help: ## list the targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-14s %s\n", $$1, $$2}'
@@ -37,7 +38,7 @@ dev: ## run the API with stubs on http://localhost:8000, serving the chat UI too
 	cd api && SERVE_UI_DIR=../ui RETRIEVER=stub LLM_PROVIDER=stub $(BIN)/uvicorn app.main:app --reload --port 8000
 
 cluster: ## start minikube with Calico, then enable metrics-server and ingress
-	minikube start --driver=docker --cni=calico --memory=6144 --cpus=4
+	minikube start --driver=docker --cni=calico --memory=$(MINIKUBE_MEMORY) --cpus=4
 	minikube addons enable metrics-server
 	minikube addons enable ingress
 
@@ -50,21 +51,23 @@ stage-corpus: ## copy corpus/raw and eval/fixtures into the indexer's build cont
 dry-run: ## extract, clean and chunk the real corpus locally; prints statistics, writes nothing
 	cd indexer && CORPUS_DIR=../corpus/raw $(BIN)/python -m pipeline.run --dry-run
 
-images: stage-corpus ## build the three images and load them into minikube
+app-images: ## build and load the API and UI for a seeded dev deployment
 	docker build -t rahbar-api:$(TAG) api
-	docker build -t rahbar-indexer:$(TAG) indexer
 	docker build -t rahbar-ui:$(TAG) ui
 	minikube image load rahbar-api:$(TAG)
-	minikube image load rahbar-indexer:$(TAG)
 	minikube image load rahbar-ui:$(TAG)
+
+images: stage-corpus app-images ## also build and load the indexer for a deliberate refresh
+	docker build -t rahbar-indexer:$(TAG) indexer
+	minikube image load rahbar-indexer:$(TAG)
 
 apply: ## apply the dev overlay
 	kubectl apply -k k8s/overlays/dev
 
 secret: ## create the LLM key Secret from the LLM_API_KEY variable; never from a file
 	@test -n "$$LLM_API_KEY" || { echo "export LLM_API_KEY=... first"; exit 1; }
-	kubectl create secret generic rahbar-secret -n $(NS) \
-	  --from-literal=LLM_API_KEY="$$LLM_API_KEY" --dry-run=client -o yaml | kubectl apply -f -
+	@set -o pipefail; $(PY) -c 'import base64, json, os; print(json.dumps({"apiVersion": "v1", "kind": "Secret", "metadata": {"name": "rahbar-secret"}, "type": "Opaque", "data": {"LLM_API_KEY": base64.b64encode(os.environ["LLM_API_KEY"].encode()).decode()}}))' | \
+	  kubectl -n $(NS) apply --server-side --field-manager=rahbar-secret-setup -f -
 
 index: ## run the indexer once, from the CronJob's template
 	kubectl create job --from=cronjob/reindex reindex-$$(date +%s) -n $(NS)

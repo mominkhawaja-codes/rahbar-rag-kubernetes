@@ -43,6 +43,7 @@ class OllamaEmbedder:
         self.model = settings.embed_model
         self.url = f"{settings.ollama_url.rstrip('/')}/api/embed"
         self.timeout = settings.embed_timeout
+        self.num_threads = settings.ollama_num_threads
         self._memo: OrderedDict[str, list[float]] = OrderedDict()
         self._memo_size = memo_size
 
@@ -50,7 +51,11 @@ class OllamaEmbedder:
         if text in self._memo:
             self._memo.move_to_end(text)
             return self._memo[text]
-        payload = {"model": self.model, "input": [query_prefix(self.model) + text]}
+        payload: dict[str, object] = {
+            "model": self.model, "input": [query_prefix(self.model) + text],
+        }
+        if self.num_threads > 0:
+            payload["options"] = {"num_thread": self.num_threads}
         last: Exception | None = None
         for attempt in range(2):                     # one retry on a transient error
             try:

@@ -48,7 +48,7 @@ class ScriptedProvider:
 
 
 def grounded_answer(*cites: Passage, confidence: str = "high") -> Answer:
-    return Answer(reasoning="r", answer="The rule says so.",
+    return Answer(reasoning="r", answer="The rule says so. [1]",
                   citations=[Citation(source=p.source, section=p.section, page=p.page)
                              for p in cites],
                   answered_from_context=True, confidence=confidence)  # type: ignore[arg-type]

@@ -84,7 +84,10 @@ class ChromaRetriever:
 
             self._client = chromadb.HttpClient(
                 host=self.settings.chroma_host, port=self.settings.chroma_port,
-                settings=ChromaSettings(anonymized_telemetry=False))
+                # With explicit TLS verification, the pinned Chroma client uses
+                # HTTPX's bounded default timeouts. Its default session has no timeout.
+                settings=ChromaSettings(anonymized_telemetry=False,
+                                        chroma_server_ssl_verify=True))
         return self._client
 
     def collection(self, refresh: bool = False) -> Any:

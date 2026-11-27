@@ -10,6 +10,7 @@ import logging
 import os
 import time
 import uuid
+from asyncio import Semaphore
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -24,7 +25,6 @@ from .logjson import configure_logging, request_id_var
 from .providers.llm import get_provider
 from .retrieval import get_retriever
 from .routes import ask, health, metrics
-from .routes.health import run_checks
 from .services.cache import get_cache
 
 log = logging.getLogger("rahbar.api")
@@ -39,12 +39,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.retriever = get_retriever(settings, embedder=app.state.embedder)
     app.state.provider = get_provider(settings)
     app.state.cache = get_cache(settings)
-    # The embedding pin (4.4): log a mismatch loudly at start-up. /readyz repeats the
-    # check on every probe and keeps the pod out of the Service until it is fixed.
-    # This process only reads the index; the indexer Job writes it.
-    pin = run_checks(app.state).get("embed_pin")
-    if pin is not None and not pin.get("ok"):
-        log.error("embedding pin check failed", extra={"error": pin.get("error")})
+    # The first readiness probe checks the embedding pin before traffic is admitted.
+    # A dependency outage must not delay binding the liveness endpoint.
+    app.state.ask_slots = Semaphore(2)
     log.info(
         "api started",
         extra={"retriever": settings.retriever, "llm_provider": settings.llm_provider,

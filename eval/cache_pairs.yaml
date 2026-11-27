@@ -8,6 +8,29 @@
 # (depends on an earlier turn: must never reach the cache at all).
 
 pairs:
+  # Reported live cases and answer-changing qualifiers.
+  - {id: live-paraphrase, kind: paraphrase, same_answer: true,
+     cached: "what is the GPA that puts in on academic warning",
+     probe: "academic warning CGPA Threshold"}
+  - {id: current-scope, kind: paraphrase, same_answer: true,
+     cached: "academic warning CGPA Threshold",
+     probe: "academic warning CGPA Threshold under current rules"}
+  - {id: opposite-direction, kind: near_miss, same_answer: false,
+     cached: "Does a CGPA below 2.00 trigger an academic warning?",
+     probe: "Does a CGPA above 2.00 trigger an academic warning?"}
+  - {id: negation, kind: near_miss, same_answer: false,
+     cached: "Which students are placed on academic warning?",
+     probe: "Which students are not placed on academic warning?"}
+  - {id: numeric-cutoff, kind: near_miss, same_answer: false,
+     cached: "Does a CGPA of 1.99 trigger an academic warning?",
+     probe: "Does a CGPA of 2.01 trigger an academic warning?"}
+  - {id: academic-warning-year, kind: version, same_answer: false,
+     cached: "academic warning CGPA Threshold",
+     probe: "academic warning CGPA Threshold under the 2023 rules"}
+  - {id: programme-fees, kind: near_miss, same_answer: false,
+     cached: "How much is the BS tuition fee per credit hour?",
+     probe: "How much is the MS tuition fee per credit hour?"}
+
   # --- exact repeats: always the same answer
   - {id: e1, kind: exact, same_answer: true,
      cached: "What CGPA do I need to avoid academic warning?",
