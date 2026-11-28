@@ -1,0 +1,22 @@
+{
+  "baseline_count": 642,
+  "baseline_index_id": "e15c5f0ab556",
+  "doc_id": "synthetic-a3-recovery-observatory",
+  "entry": {
+    "bytes": 1066,
+    "content_type": "text/markdown",
+    "doc_id": "synthetic-a3-recovery-observatory",
+    "doc_version": "2026-11",
+    "fetched_at": "2026-11-28",
+    "file": "synthetic-a3-recovery-observatory.md",
+    "name": "Synthetic Observatory Calibration Ledger",
+    "origin": "synthetic",
+    "sha256": "b9a081a1dd11335070afae9e693efdba993aac8c6763e71e185f13c7c8072841",
+    "superseded": true
+  },
+  "expected_exit_code": 86,
+  "expected_recovery": "Withdraw only the temporary source, then run one ordinary indexer Job to remove its orphan chunks. Preserve all 642 original chunks.",
+  "original_manifest_sha256": "9787d1bbd595a4ec552d6af0577a745771f51da149c31a292a9b7a9650659700",
+  "source": "synthetic-a3-recovery-observatory.md",
+  "staged_manifest_sha256": "50efef68b882153e9f185504af5f930f515ddaa4b664d31463babe252a930c10"
+}

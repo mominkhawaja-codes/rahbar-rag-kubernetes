@@ -1,0 +1,50 @@
+{
+  "collection": "rahbar-a3",
+  "collection_uuid": "fae06d6f-5449-4113-b2f1-b398cf483bdd",
+  "container": "rahbar-a3-backup-physical-check",
+  "container_id": "4d0d63f350ede549e623a0b2644c593bf27565bcfdb032c96f52e3f48380f986",
+  "documents": 14,
+  "duplicate_chunk_ids": 0,
+  "image_digest": "sha256:28a3b2c05c74c83686c2273d4d0994b80c481805d0f47887f289c53a4616e592",
+  "index_id": "e15c5f0ab556",
+  "matching_chunk_ids": 642,
+  "matching_document_ids_and_metadata": 642,
+  "matching_text_sha256": 642,
+  "matching_vector_fingerprints": 642,
+  "mismatches": {
+    "content_sha256": [],
+    "embedding_sha256": [],
+    "metadata": []
+  },
+  "published_interface": "loopback only",
+  "records": 642,
+  "representative_retrieval": [
+    {
+      "distance_to_expected": -1.1920929e-07,
+      "expected_chunk_found_in_fts": true,
+      "full_text_match_count": 1,
+      "full_text_phrase": "by 11:00 pm from Sunday to Thursday",
+      "nearest_active_ids": [
+        "hostel-residence-policy-2026-html-0003",
+        "hostel-residence-policy-2026-html-0005",
+        "hostel-residence-policy-2026-html-0001"
+      ],
+      "query_fixture_chunk": "hostel-residence-policy-2026-html-0003"
+    },
+    {
+      "distance_to_expected": 5.9604645e-08,
+      "expected_chunk_found_in_fts": true,
+      "full_text_match_count": 1,
+      "full_text_phrase": "No workload exemption",
+      "nearest_active_ids": [
+        "faculty-entrepreneurship-policy-2026-revision-pdf-0006",
+        "faculty-entrepreneurship-policy-2026-revision-pdf-0002",
+        "faculty-entrepreneurship-policy-2026-revision-pdf-0001"
+      ],
+      "query_fixture_chunk": "faculty-entrepreneurship-policy-2026-revision-pdf-0006"
+    }
+  ],
+  "source_artifact_unchanged": true,
+  "status": "passed",
+  "test_directory": "physical"
+}

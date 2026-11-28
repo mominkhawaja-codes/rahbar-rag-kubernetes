@@ -27,3 +27,20 @@ for [initial Batch A](batch-a-retry-01/chunk-manifest.json),
 Full logs, raw documents, state files with vectors, and local recovery artifacts
 remain outside the commit. Native evidence is in
 [the native validation directory](../a3-batch-validation/README.md).
+
+## Cache invalidation, recovery, and persistence
+
+| Check | Observed result |
+| --- | --- |
+| [Cache invalidation](a2-cache-invalidation/summary.json) | The same single-worker API process returned `miss, hit` before and after reindexing the synthetic hostel policy. All four answers used stub generation and cited the policy. Restoring its original 11:00 p.m. curfew re-embedded six chunks and changed the index from `0b5fe89165a4` to `e15c5f0ab556`. |
+| [Isolated physical restore](a2-reliability/isolated-restore/physical-restore.json) | All 642 records, metadata, text hashes, and vectors matched exactly. Vector and full-text queries passed on the restored copy. |
+| [SQLite backup checks](a2-reliability/isolated-restore/sqlite-checks.json) | The Chroma-matched SQLite 3.46.0 passed on both the archive and the read-only online snapshot. The same Windows SQLite 3.50.4 FTS5 warning appeared on both copies. |
+| [Isolated logical restore](a2-reliability/isolated-restore/logical-restore.json) | All 642 IDs, metadata records, and texts matched, and representative retrieval passed. Of the vectors, 570 matched exactly and 72 differed by at most one float32 step. |
+| [Interrupted write](a2-reliability/interrupted-job/partial-write-audit.json) | The test writer exited deliberately with code 86 after writing three synthetic chunks. Chroma temporarily held 645 records. The prior state and all original records were preserved. |
+| [Recovery](a2-reliability/recovery-job/audit.json) | One normal ingestion run removed the three orphan chunks with zero embeddings and restored 642 consistent records at index `a7ea00b43ec0`. The parsed indexing state matched its earlier values. |
+| [Chroma pod replacement](a2-reliability/chroma-persistence/after.json) | A new Ready pod from the same StatefulSet used the same PVC. All 642 records and the index ID were preserved, and the state file was byte-identical across the replacement. |
+
+[Terminal Job events](a2-reliability/job-events.json) are excerpts of the
+actual structured logs. The [backup inventory](a2-reliability/backup-artifacts.json)
+records checksums for the local archives. No database copies or logical
+export records are stored here. The A3 CronJob remained suspended throughout.

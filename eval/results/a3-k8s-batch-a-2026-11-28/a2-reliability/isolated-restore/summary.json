@@ -1,0 +1,10 @@
+{
+  "initial_physical_probe_correction": "An initial phrase was absent from its selected chunk. The corrected probe and full physical comparison passed.",
+  "live_changes_performed": false,
+  "logical_restore": "partial",
+  "online_snapshot": "Validated by quick_check independently of the full physical application restore.",
+  "original_backups_verified_unchanged": true,
+  "physical_restore": "passed using a separate extraction of the original PVC archive",
+  "sqlite_finding": "SQLite 3.50.4 reported an FTS5 error on both the raw archive and the consistent online backup. SQLite 3.46.0 with the source ID embedded in Chroma passed both. Chroma read and queried the physical restore.",
+  "temporary_chroma_containers_stopped": true
+}

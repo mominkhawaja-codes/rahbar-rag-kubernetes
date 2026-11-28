@@ -1,0 +1,124 @@
+{
+  "7f1e374fbb544b8394309490dbc404d3": {
+    "cache": {
+      "generation": "191ea4e249c5d52f",
+      "result": "hit",
+      "served_from_trace_id": "8d9d8e37805d4217a9a3a52034d8b4ef",
+      "similarity": 1.0
+    },
+    "citations": [
+      {
+        "page": 1,
+        "section": "3. Hours and visitors [3.1-3.3]",
+        "source": "hostel-residence-policy-2026.html"
+      }
+    ],
+    "collection": {
+      "index_id": "e15c5f0ab556",
+      "name": "rahbar-a3"
+    },
+    "guardrails": [],
+    "outcome": "answered",
+    "pipeline": {
+      "cache_backend": "memory",
+      "prompt_version": "v6",
+      "provider": "stub",
+      "relevance_floor": 0.45,
+      "retriever": "chroma",
+      "top_k": 5
+    },
+    "stages": {
+      "cache_lookup": {
+        "ms": 0.14,
+        "status": "ran"
+      },
+      "cache_store": {
+        "ms": null,
+        "reason": "served from the cache",
+        "status": "skipped"
+      },
+      "citation_check": {
+        "ms": null,
+        "reason": "served from the cache",
+        "status": "skipped"
+      },
+      "generation": {
+        "ms": null,
+        "reason": "served from the cache",
+        "status": "skipped"
+      },
+      "relevance_floor": {
+        "ms": null,
+        "reason": "served from the cache",
+        "status": "skipped"
+      },
+      "retrieval": {
+        "ms": null,
+        "reason": "served from the cache",
+        "status": "skipped"
+      }
+    },
+    "timestamp": "2026-11-28T06:39:21.000Z",
+    "trace_id": "7f1e374fbb544b8394309490dbc404d3"
+  },
+  "8d9d8e37805d4217a9a3a52034d8b4ef": {
+    "cache": {
+      "generation": "191ea4e249c5d52f",
+      "result": "miss"
+    },
+    "citations": [
+      {
+        "page": 1,
+        "section": "3. Hours and visitors [3.1-3.3]",
+        "source": "hostel-residence-policy-2026.html"
+      }
+    ],
+    "collection": {
+      "built_at": "2026-11-28T06:39:03Z",
+      "chunks": 642,
+      "dimension": 768,
+      "embed_model": "nomic-embed-text",
+      "index_id": "e15c5f0ab556",
+      "name": "rahbar-a3"
+    },
+    "guardrails": [],
+    "outcome": "answered",
+    "pipeline": {
+      "cache_backend": "memory",
+      "prompt_version": "v6",
+      "provider": "stub",
+      "relevance_floor": 0.45,
+      "retriever": "chroma",
+      "top_k": 5
+    },
+    "stages": {
+      "cache_lookup": {
+        "ms": 0.03,
+        "status": "ran"
+      },
+      "cache_store": {
+        "ms": 0.05,
+        "status": "ran"
+      },
+      "citation_check": {
+        "ms": 0.11,
+        "status": "ran"
+      },
+      "generation": {
+        "ms": 0.14,
+        "status": "ran"
+      },
+      "relevance_floor": {
+        "ms": 0.0,
+        "status": "ran"
+      },
+      "retrieval": {
+        "ms": 13.34,
+        "note": "includes embedding the question",
+        "status": "ran"
+      }
+    },
+    "timestamp": "2026-11-28T06:39:20.926Z",
+    "trace_id": "8d9d8e37805d4217a9a3a52034d8b4ef"
+  }
+}

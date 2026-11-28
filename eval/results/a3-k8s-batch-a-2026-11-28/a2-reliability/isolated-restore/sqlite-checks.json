@@ -1,0 +1,30 @@
+{
+  "deployed_image_digest": "sha256:28a3b2c05c74c83686c2273d4d0994b80c481805d0f47887f289c53a4616e592",
+  "chroma_binary_sqlite_source_id": "2024-05-23 13:25:27 96c92aba00c8375bc32fafcdf12429c58bd8aabfcadab6683e35bbb9cdebf19e",
+  "compatible_check_cli": "3.46.0 2024-05-23 13:25:27 96c92aba00c8375bc32fafcdf12429c58bd8aabfcadab6683e35bbb9cdebf19e (64-bit)",
+  "archive_results": {
+    "windows_python_3.50.4": [
+      "malformed inverted index for FTS5 table main.embedding_fulltext_search"
+    ],
+    "chroma_sqlite_source_match_3.46.0": [
+      "ok"
+    ]
+  },
+  "archive_database_sha256": "2ba605a6ffe1c2bd83c6a579d352b094775d180f1d08b6e03c6d96c6c9414044",
+  "original_archive_sha256": "e2ce2e68aa6d8935964a545fd43d60b169250d5ac3b67ebc8c67830f40da41ad",
+  "archive_journal_mode_bytes": [
+    1,
+    1
+  ],
+  "archive_has_no_wal_shm_or_journal": true,
+  "online_backup_results": {
+    "windows_python_3.50.4": [
+      "malformed inverted index for FTS5 table main.embedding_fulltext_search"
+    ],
+    "chroma_sqlite_source_match_3.46.0": [
+      "ok"
+    ]
+  },
+  "online_backup_sha256": "133c328794cbb67ffc6fd1fdd0b23aa01f5dc413081883f17e85cfc478aebb62",
+  "online_backup_method": "SQLite 3.40.1 online backup, journal mode delete via read-only connection and in-memory destination"
+}

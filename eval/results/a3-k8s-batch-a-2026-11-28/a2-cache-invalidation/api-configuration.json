@@ -1,0 +1,229 @@
+{
+  "apiVersion": "v1",
+  "items": [
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "a3-cache-api-egress",
+        "namespace": "rahbar-a3"
+      },
+      "spec": {
+        "egress": [
+          {
+            "ports": [
+              {
+                "port": 8000,
+                "protocol": "TCP"
+              }
+            ],
+            "to": [
+              {
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "chroma"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "ports": [
+              {
+                "port": 11434,
+                "protocol": "TCP"
+              }
+            ],
+            "to": [
+              {
+                "ipBlock": {
+                  "cidr": "0.0.0.0/0"
+                }
+              }
+            ]
+          }
+        ],
+        "podSelector": {
+          "matchLabels": {
+            "app": "api",
+            "validation": "cache-invalidation"
+          }
+        },
+        "policyTypes": [
+          "Egress"
+        ]
+      }
+    },
+    {
+      "apiVersion": "apps/v1",
+      "kind": "Deployment",
+      "metadata": {
+        "name": "a3-cache-api",
+        "namespace": "rahbar-a3"
+      },
+      "spec": {
+        "replicas": 1,
+        "selector": {
+          "matchLabels": {
+            "app": "api",
+            "validation": "cache-invalidation"
+          }
+        },
+        "strategy": {
+          "type": "Recreate"
+        },
+        "template": {
+          "metadata": {
+            "labels": {
+              "app": "api",
+              "validation": "cache-invalidation"
+            }
+          },
+          "spec": {
+            "automountServiceAccountToken": false,
+            "containers": [
+              {
+                "args": [
+                  "app.main:app",
+                  "--host",
+                  "0.0.0.0",
+                  "--port",
+                  "8000",
+                  "--workers",
+                  "1",
+                  "--timeout-graceful-shutdown",
+                  "20"
+                ],
+                "command": [
+                  "uvicorn"
+                ],
+                "env": [
+                  {
+                    "name": "RETRIEVER",
+                    "value": "chroma"
+                  },
+                  {
+                    "name": "CHROMA_HOST",
+                    "value": "chroma"
+                  },
+                  {
+                    "name": "CHROMA_PORT",
+                    "value": "8000"
+                  },
+                  {
+                    "name": "CHROMA_COLLECTION",
+                    "value": "rahbar-a3"
+                  },
+                  {
+                    "name": "EMBED_MODEL",
+                    "value": "nomic-embed-text"
+                  },
+                  {
+                    "name": "OLLAMA_URL",
+                    "value": "http://host.minikube.internal:11434"
+                  },
+                  {
+                    "name": "CACHE_BACKEND",
+                    "value": "memory"
+                  },
+                  {
+                    "name": "LLM_PROVIDER",
+                    "value": "stub"
+                  },
+                  {
+                    "name": "TRACE_STDOUT",
+                    "value": "true"
+                  },
+                  {
+                    "name": "TRACE_DIR",
+                    "value": ""
+                  },
+                  {
+                    "name": "TOP_K",
+                    "value": "5"
+                  }
+                ],
+                "image": "rahbar-api:a3-cache-8f39113",
+                "imagePullPolicy": "Never",
+                "livenessProbe": {
+                  "failureThreshold": 3,
+                  "httpGet": {
+                    "path": "/healthz",
+                    "port": 8000
+                  },
+                  "periodSeconds": 20,
+                  "timeoutSeconds": 5
+                },
+                "name": "api",
+                "ports": [
+                  {
+                    "containerPort": 8000
+                  }
+                ],
+                "readinessProbe": {
+                  "failureThreshold": 3,
+                  "httpGet": {
+                    "path": "/readyz",
+                    "port": 8000
+                  },
+                  "periodSeconds": 5,
+                  "timeoutSeconds": 5
+                },
+                "resources": {
+                  "limits": {
+                    "cpu": "500m",
+                    "memory": "512Mi"
+                  },
+                  "requests": {
+                    "cpu": "100m",
+                    "memory": "192Mi"
+                  }
+                },
+                "securityContext": {
+                  "allowPrivilegeEscalation": false,
+                  "capabilities": {
+                    "drop": [
+                      "ALL"
+                    ]
+                  },
+                  "readOnlyRootFilesystem": true
+                },
+                "startupProbe": {
+                  "failureThreshold": 30,
+                  "httpGet": {
+                    "path": "/healthz",
+                    "port": 8000
+                  },
+                  "periodSeconds": 2,
+                  "timeoutSeconds": 3
+                },
+                "volumeMounts": [
+                  {
+                    "mountPath": "/tmp",
+                    "name": "tmp"
+                  }
+                ]
+              }
+            ],
+            "enableServiceLinks": false,
+            "securityContext": {
+              "runAsGroup": 10001,
+              "runAsNonRoot": true,
+              "runAsUser": 10001,
+              "seccompProfile": {
+                "type": "RuntimeDefault"
+              }
+            },
+            "volumes": [
+              {
+                "emptyDir": {},
+                "name": "tmp"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "kind": "List"
+}

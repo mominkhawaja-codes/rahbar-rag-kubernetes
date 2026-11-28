@@ -1,0 +1,93 @@
+{
+  "a3-cache-index-change-01": [
+    {
+      "ts": "2026-11-28T06:39:03Z",
+      "logger": "rahbar.indexer",
+      "msg": "ingest finished",
+      "mode": "incremental",
+      "reason": "state and collection found",
+      "documents": {
+        "total": 14,
+        "added": 0,
+        "changed": 1,
+        "unchanged": 13,
+        "deleted": 0,
+        "rejected": 0,
+        "metadata_updated": 0,
+        "newly_archived": 0,
+        "restored": 0
+      },
+      "chunks": {
+        "embedded": 6,
+        "upserted": 6,
+        "deleted": 0,
+        "metadata_updated": 0,
+        "total_after": 642
+      },
+      "verification_embeddings": 6,
+      "orphans_removed": 0,
+      "index_id": "e15c5f0ab556",
+      "index_id_changed": true,
+      "report": "/data/reports/ingest-20261128T063903Z.json"
+    },
+    {
+      "ts": "2026-11-28T06:39:03Z",
+      "logger": "rahbar.indexer",
+      "msg": "indexer finished",
+      "chunks": 642,
+      "seconds": 19.9
+    }
+  ],
+  "a3-interrupt-update-01": [
+    {
+      "event": "intentional_interrupt_after_committed_upsert",
+      "chunks": [
+        "synthetic-a3-recovery-observatory-md-0000",
+        "synthetic-a3-recovery-observatory-md-0001",
+        "synthetic-a3-recovery-observatory-md-0002"
+      ],
+      "source": "synthetic-a3-recovery-observatory.md",
+      "index_id_before_state_save": "e15c5f0ab556",
+      "exit_code": 86
+    }
+  ],
+  "a3-recover-update-01": [
+    {
+      "ts": "2026-11-28T08:48:01Z",
+      "logger": "rahbar.indexer",
+      "msg": "ingest finished",
+      "mode": "incremental",
+      "reason": "state and collection found",
+      "documents": {
+        "total": 14,
+        "added": 0,
+        "changed": 0,
+        "unchanged": 14,
+        "deleted": 0,
+        "rejected": 0,
+        "metadata_updated": 0,
+        "newly_archived": 0,
+        "restored": 0
+      },
+      "chunks": {
+        "embedded": 0,
+        "upserted": 0,
+        "deleted": 0,
+        "metadata_updated": 0,
+        "total_after": 642
+      },
+      "verification_embeddings": 0,
+      "orphans_removed": 3,
+      "index_id": "a7ea00b43ec0",
+      "index_id_changed": true,
+      "report": "/data/reports/ingest-20261128T084801Z.json"
+    },
+    {
+      "ts": "2026-11-28T08:48:01Z",
+      "logger": "rahbar.indexer",
+      "msg": "indexer finished",
+      "chunks": 642,
+      "seconds": 7.7
+    }
+  ]
+}

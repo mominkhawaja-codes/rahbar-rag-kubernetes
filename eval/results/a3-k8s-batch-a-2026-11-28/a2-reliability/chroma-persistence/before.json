@@ -1,0 +1,15 @@
+{
+  "chroma_pv": "pvc-25e1741f-5038-492e-b4c1-c23b90f9f786",
+  "chroma_pvc_uid": "25e1741f-5038-492e-b4c1-c23b90f9f786",
+  "chunk_count": 642,
+  "collection_uuid": "fae06d6f-5449-4113-b2f1-b398cf483bdd",
+  "fingerprint_reference": "../baseline-chunks.json",
+  "index_id": "a7ea00b43ec0",
+  "lake_pv": "pvc-9335c82e-c1f5-45af-848a-7aa5cfe48293",
+  "lake_pvc_uid": "9335c82e-c1f5-45af-848a-7aa5cfe48293",
+  "persistent_mount": "/data",
+  "pod_uid": "e402fe9b-d24b-4a19-a25c-dd5fe8e6bfe7",
+  "resource_version": "96549",
+  "state_sha256": "bddf6c66e5e80513a2ac776e81b3c041a7d451ee8b7712dab9b76882bb5e274a",
+  "statefulset_uid": "c9a37d2c-39a2-43ed-9659-61bcbc42e386"
+}

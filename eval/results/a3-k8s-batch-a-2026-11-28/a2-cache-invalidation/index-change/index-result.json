@@ -1,0 +1,23 @@
+{
+  "chunk_count": 642,
+  "chunk_ids": [
+    "hostel-residence-policy-2026-html-0000",
+    "hostel-residence-policy-2026-html-0001",
+    "hostel-residence-policy-2026-html-0002",
+    "hostel-residence-policy-2026-html-0003",
+    "hostel-residence-policy-2026-html-0004",
+    "hostel-residence-policy-2026-html-0005"
+  ],
+  "faculty_versions": {
+    "faculty-entrepreneurship-and-technical-start-ups-policy.pdf": "archived",
+    "faculty-entrepreneurship-policy-2026-revision.pdf": "active"
+  },
+  "index_id_after": "e15c5f0ab556",
+  "index_id_before": "0b5fe89165a4",
+  "index_state_documents": 14,
+  "indexed_source_sha256": "39a6f9a476d126304ccdde564530943f15f0b4bafc42a1af3aaedf984dcb8cfb",
+  "ingestion_report": "ingest-20261128T063903Z.json",
+  "job": "a3-cache-index-change-01",
+  "job_duration_seconds": 38.0,
+  "other_state_entries_identical": 13
+}

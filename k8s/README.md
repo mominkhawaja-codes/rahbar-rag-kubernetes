@@ -213,8 +213,11 @@ separate hostname for the API so Assignment 02 keeps its current Ingress.
 
 [The Kubernetes evidence](../eval/results/a3-k8s-batch-a-2026-11-28/README.md)
 records the Batch A retry, no-op rerun, Batch B ingestion and document lifecycle
-Jobs. The final collection held 642 chunks with index ID `0b5fe89165a4` and
-the 2026 faculty revision active. The weekly CronJob remained suspended.
+Jobs, same-process cache invalidation, isolated backup restoration,
+interrupted-Job recovery, and Chroma pod replacement. After recovery and
+replacement, the collection held 642 chunks at index ID `a7ea00b43ec0`, with
+the original synthetic hostel policy and the 2026 faculty revision active.
+The weekly CronJob remained suspended.
 The local Assignment 02 API and UI were temporarily paused during validation.
 Keep the restoration settings in the local recovery notes.
 

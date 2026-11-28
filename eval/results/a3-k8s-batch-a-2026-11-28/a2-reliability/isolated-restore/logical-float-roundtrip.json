@@ -1,0 +1,36 @@
+{
+  "components_affected": 26644,
+  "max_abs_difference": 1.4901161193847656e-08,
+  "max_f32_ulp_difference": 1,
+  "sample": [
+    [
+      "academic-rules-handbook-jun-2026-pdf-0003",
+      1,
+      0.05140378,
+      0.051403783,
+      1
+    ],
+    [
+      "academic-rules-handbook-jun-2026-pdf-0003",
+      2,
+      -0.18646276,
+      -0.18646277,
+      1
+    ],
+    [
+      "academic-rules-handbook-jun-2026-pdf-0003",
+      3,
+      -0.025965925,
+      -0.025965927,
+      1
+    ],
+    [
+      "academic-rules-handbook-jun-2026-pdf-0003",
+      6,
+      0.05023476,
+      0.050234765,
+      1
+    ]
+  ],
+  "vectors_affected": 72
+}

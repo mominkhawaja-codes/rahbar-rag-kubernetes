@@ -1,0 +1,57 @@
+{
+  "container": {
+    "allocatedResources": {
+      "cpu": "250m",
+      "memory": "512Mi"
+    },
+    "containerID": "containerd://755c24bc498a86a36d6b0bdaf1a39f3bf7f3dbff9961aaa14ea07188629bd443",
+    "image": "docker.io/library/rahbar-indexer:a3",
+    "imageID": "sha256:cb0f5433dc53d218211048968be3b0ec6baf69bb9ee9cb81e3a0bccbabe588c1",
+    "lastState": {},
+    "name": "indexer",
+    "ready": false,
+    "resources": {
+      "limits": {
+        "cpu": "1",
+        "memory": "1536Mi"
+      },
+      "requests": {
+        "cpu": "250m",
+        "memory": "512Mi"
+      }
+    },
+    "restartCount": 0,
+    "started": false,
+    "state": {
+      "terminated": {
+        "containerID": "containerd://755c24bc498a86a36d6b0bdaf1a39f3bf7f3dbff9961aaa14ea07188629bd443",
+        "exitCode": 86,
+        "finishedAt": "2026-11-28T08:39:39Z",
+        "reason": "Error",
+        "startedAt": "2026-11-28T08:39:13Z"
+      }
+    },
+    "user": {
+      "linux": {
+        "gid": 10001,
+        "supplementalGroups": [
+          10001
+        ],
+        "uid": 10001
+      }
+    },
+    "volumeMounts": [
+      {
+        "mountPath": "/data",
+        "name": "ragops-data"
+      },
+      {
+        "mountPath": "/tmp",
+        "name": "tmp"
+      }
+    ]
+  },
+  "phase": "Failed",
+  "pod": "a3-interrupt-update-01-qznt9",
+  "uid": "73f1ee60-cdf6-41e3-86d1-f51dddad6003"
+}

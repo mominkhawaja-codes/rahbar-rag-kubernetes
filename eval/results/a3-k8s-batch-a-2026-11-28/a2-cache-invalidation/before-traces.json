@@ -1,0 +1,124 @@
+{
+  "7b1a92ac1e3e4fe88a9f9f62a28a367e": {
+    "cache": {
+      "generation": "1f0a44123e8b6f23",
+      "result": "miss"
+    },
+    "citations": [
+      {
+        "page": 1,
+        "section": "3. Hours and visitors [3.1-3.3]",
+        "source": "hostel-residence-policy-2026.html"
+      }
+    ],
+    "collection": {
+      "built_at": "2026-11-28T06:18:03Z",
+      "chunks": 642,
+      "dimension": 768,
+      "embed_model": "nomic-embed-text",
+      "index_id": "0b5fe89165a4",
+      "name": "rahbar-a3"
+    },
+    "guardrails": [],
+    "outcome": "answered",
+    "pipeline": {
+      "cache_backend": "memory",
+      "prompt_version": "v6",
+      "provider": "stub",
+      "relevance_floor": 0.45,
+      "retriever": "chroma",
+      "top_k": 5
+    },
+    "stages": {
+      "cache_lookup": {
+        "ms": 2208.61,
+        "status": "ran"
+      },
+      "cache_store": {
+        "ms": 0.9,
+        "status": "ran"
+      },
+      "citation_check": {
+        "ms": 0.51,
+        "status": "ran"
+      },
+      "generation": {
+        "ms": 0.16,
+        "status": "ran"
+      },
+      "relevance_floor": {
+        "ms": 0.01,
+        "status": "ran"
+      },
+      "retrieval": {
+        "ms": 567.98,
+        "note": "includes embedding the question",
+        "status": "ran"
+      }
+    },
+    "timestamp": "2026-11-28T06:37:52.531Z",
+    "trace_id": "7b1a92ac1e3e4fe88a9f9f62a28a367e"
+  },
+  "c173d93afa92415c9e3d6dd666ff4578": {
+    "cache": {
+      "generation": "1f0a44123e8b6f23",
+      "result": "hit",
+      "served_from_trace_id": "7b1a92ac1e3e4fe88a9f9f62a28a367e",
+      "similarity": 1.0
+    },
+    "citations": [
+      {
+        "page": 1,
+        "section": "3. Hours and visitors [3.1-3.3]",
+        "source": "hostel-residence-policy-2026.html"
+      }
+    ],
+    "collection": {
+      "index_id": "0b5fe89165a4",
+      "name": "rahbar-a3"
+    },
+    "guardrails": [],
+    "outcome": "answered",
+    "pipeline": {
+      "cache_backend": "memory",
+      "prompt_version": "v6",
+      "provider": "stub",
+      "relevance_floor": 0.45,
+      "retriever": "chroma",
+      "top_k": 5
+    },
+    "stages": {
+      "cache_lookup": {
+        "ms": 1.9,
+        "status": "ran"
+      },
+      "cache_store": {
+        "ms": null,
+        "reason": "served from the cache",
+        "status": "skipped"
+      },
+      "citation_check": {
+        "ms": null,
+        "reason": "served from the cache",
+        "status": "skipped"
+      },
+      "generation": {
+        "ms": null,
+        "reason": "served from the cache",
+        "status": "skipped"
+      },
+      "relevance_floor": {
+        "ms": null,
+        "reason": "served from the cache",
+        "status": "skipped"
+      },
+      "retrieval": {
+        "ms": null,
+        "reason": "served from the cache",
+        "status": "skipped"
+      }
+    },
+    "timestamp": "2026-11-28T06:37:55.332Z",
+    "trace_id": "c173d93afa92415c9e3d6dd666ff4578"
+  }
+}

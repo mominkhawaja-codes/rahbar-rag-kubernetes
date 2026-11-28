@@ -1,0 +1,6 @@
+{
+  "backoff_limit": 0,
+  "controlled_job_restart_policy": "Never",
+  "original_restart_policy": "OnFailure",
+  "reason": "One interruption. Recovery is a separate ordinary Job after verifying the partial write."
+}

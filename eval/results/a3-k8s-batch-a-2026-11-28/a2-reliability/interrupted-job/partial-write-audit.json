@@ -1,0 +1,25 @@
+{
+  "consistency_before_recovery": {
+    "duplicate_chroma_ids": [],
+    "duplicate_state_ids": [],
+    "metadata_mismatches": [],
+    "missing_ids": [],
+    "orphan_ids": [
+      "synthetic-a3-recovery-observatory-md-0000",
+      "synthetic-a3-recovery-observatory-md-0001",
+      "synthetic-a3-recovery-observatory-md-0002"
+    ]
+  },
+  "index_id": "e15c5f0ab556",
+  "intentional_exit_code": 86,
+  "original_chunks_identical": 642,
+  "physical_count": 645,
+  "state_chunk_count": 642,
+  "stored_metadata_count": 642,
+  "unchanged_state_sha256": "2a4617c94d7f4536cbac09c5cb95eca69e2c23cf319ebe620637b01b00c90609",
+  "written_test_chunks": [
+    "synthetic-a3-recovery-observatory-md-0000",
+    "synthetic-a3-recovery-observatory-md-0001",
+    "synthetic-a3-recovery-observatory-md-0002"
+  ]
+}

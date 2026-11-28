@@ -1,0 +1,9 @@
+[
+  {
+    "event": "initial",
+    "phase": "Running",
+    "pod_uid": "f515e4f9-5d0b-4646-8872-a0a4d3fbac00",
+    "ready": true,
+    "resource_version": "106987"
+  }
+]

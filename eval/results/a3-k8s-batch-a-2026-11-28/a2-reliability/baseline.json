@@ -1,0 +1,15 @@
+{
+  "chunk_count": 642,
+  "collection_uuid": "fae06d6f-5449-4113-b2f1-b398cf483bdd",
+  "consistency": {
+    "duplicate_chroma_ids": [],
+    "duplicate_state_ids": [],
+    "metadata_mismatches": [],
+    "missing_ids": [],
+    "orphan_ids": []
+  },
+  "cronjob_suspended": true,
+  "document_count": 14,
+  "index_id": "e15c5f0ab556",
+  "persisted_state_sha256": "2a4617c94d7f4536cbac09c5cb95eca69e2c23cf319ebe620637b01b00c90609"
+}

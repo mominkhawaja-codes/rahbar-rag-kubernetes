@@ -1,0 +1,80 @@
+{
+  "after": {
+    "cache_generation": "191ea4e249c5d52f",
+    "index_id": "e15c5f0ab556",
+    "sequence": [
+      "miss",
+      "hit"
+    ],
+    "trace_ids": [
+      "8d9d8e37805d4217a9a3a52034d8b4ef",
+      "7f1e374fbb544b8394309490dbc404d3"
+    ]
+  },
+  "before": {
+    "cache_generation": "1f0a44123e8b6f23",
+    "index_id": "0b5fe89165a4",
+    "question": "What is the curfew for hostel residents from Sunday to Thursday?",
+    "sequence": [
+      "miss",
+      "hit"
+    ],
+    "trace_ids": [
+      "7b1a92ac1e3e4fe88a9f9f62a28a367e",
+      "c173d93afa92415c9e3d6dd666ff4578"
+    ]
+  },
+  "cache": "memory",
+  "index_change": {
+    "chunk_count": 642,
+    "chunk_ids": [
+      "hostel-residence-policy-2026-html-0000",
+      "hostel-residence-policy-2026-html-0001",
+      "hostel-residence-policy-2026-html-0002",
+      "hostel-residence-policy-2026-html-0003",
+      "hostel-residence-policy-2026-html-0004",
+      "hostel-residence-policy-2026-html-0005"
+    ],
+    "faculty_versions": {
+      "faculty-entrepreneurship-and-technical-start-ups-policy.pdf": "archived",
+      "faculty-entrepreneurship-policy-2026-revision.pdf": "active"
+    },
+    "index_id_after": "e15c5f0ab556",
+    "index_id_before": "0b5fe89165a4",
+    "index_state_documents": 14,
+    "indexed_source_sha256": "39a6f9a476d126304ccdde564530943f15f0b4bafc42a1af3aaedf984dcb8cfb",
+    "ingestion_report": "ingest-20261128T063903Z.json",
+    "job": "a3-cache-index-change-01",
+    "job_duration_seconds": 38.0,
+    "other_state_entries_identical": 13
+  },
+  "pod_identity": {
+    "container_id": "containerd://eb65adff129080e756046fe22096c549e091e019440e9a3dae83d39d165bf1cf",
+    "image_id": "sha256:259687e0a4d34fb0f66f4a822b71d3cf838ee4ebc2afeec07183787f1bf33e92",
+    "pod": "a3-cache-api-cfd7b5bbb-69wp4",
+    "restart_count": 0,
+    "started_at": "2026-11-28T06:37:19Z",
+    "uid": "288cf35b-3137-4d4f-88f1-848c0c83f69d"
+  },
+  "process": {
+    "boot_id": "a11c88c0-3be9-42f4-8b30-ed2fb91443fa",
+    "command_line": [
+      "/usr/local/bin/python3.12",
+      "/usr/local/bin/uvicorn",
+      "app.main:app",
+      "--host",
+      "0.0.0.0",
+      "--port",
+      "8000",
+      "--workers",
+      "1",
+      "--timeout-graceful-shutdown",
+      "20"
+    ],
+    "pid": 1,
+    "start_ticks": "747318"
+  },
+  "provider": "stub",
+  "question": "What is the curfew for hostel residents from Sunday to Thursday?",
+  "result": "pass"
+}

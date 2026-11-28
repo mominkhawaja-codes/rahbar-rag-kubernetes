@@ -1,0 +1,1 @@
+pod "chroma-0" deleted from rahbar-a3 namespace

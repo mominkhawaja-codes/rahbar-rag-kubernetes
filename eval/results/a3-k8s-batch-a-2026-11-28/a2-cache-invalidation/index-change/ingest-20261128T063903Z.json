@@ -1,0 +1,66 @@
+{
+  "timestamp": "2026-11-28T06:39:03Z",
+  "collection": "rahbar-a3",
+  "embed_model": "nomic-embed-text",
+  "mode": "incremental",
+  "reason": "state and collection found",
+  "documents": {
+    "total": 14,
+    "added": [],
+    "changed": [
+      "hostel-residence-policy-2026.html"
+    ],
+    "unchanged": [
+      "undergraduate-academic-rules-aug-2023.pdf",
+      "academic-rules-handbook-jun-2026.pdf",
+      "prospectus-2026-academic-rules-and-regulations.pdf",
+      "student-handbook-jun-2026.pdf",
+      "annual-report-2019-20.pdf",
+      "annual-report-2023-24.pdf",
+      "fee-structure-page.html",
+      "grading-page.html",
+      "faculty-entrepreneurship-and-technical-start-ups-policy.pdf",
+      "library-borrowing-rules-2026.pdf",
+      "examination-appeals-procedure-2026.md",
+      "student-affairs-faq-2026.md",
+      "faculty-entrepreneurship-policy-2026-revision.pdf"
+    ],
+    "deleted": [],
+    "rejected": [],
+    "metadata_updated": [],
+    "newly_archived": [],
+    "restored": []
+  },
+  "chunks": {
+    "embedded": 6,
+    "upserted": 6,
+    "deleted": 0,
+    "metadata_updated": 0,
+    "total_after": 642,
+    "by_document": {
+      "hostel-residence-policy-2026.html": 6,
+      "undergraduate-academic-rules-aug-2023.pdf": 16,
+      "academic-rules-handbook-jun-2026.pdf": 74,
+      "prospectus-2026-academic-rules-and-regulations.pdf": 35,
+      "student-handbook-jun-2026.pdf": 89,
+      "annual-report-2019-20.pdf": 81,
+      "annual-report-2023-24.pdf": 297,
+      "fee-structure-page.html": 7,
+      "grading-page.html": 6,
+      "faculty-entrepreneurship-and-technical-start-ups-policy.pdf": 7,
+      "library-borrowing-rules-2026.pdf": 6,
+      "examination-appeals-procedure-2026.md": 6,
+      "student-affairs-faq-2026.md": 5,
+      "faculty-entrepreneurship-policy-2026-revision.pdf": 7
+    }
+  },
+  "orphans_removed": 0,
+  "index_id": "e15c5f0ab556",
+  "index_id_changed": true,
+  "verification_embeddings": 6,
+  "archived_documents": [
+    "faculty-entrepreneurship-and-technical-start-ups-policy.pdf",
+    "undergraduate-academic-rules-aug-2023.pdf"
+  ],
+  "seconds": 19.5
+}

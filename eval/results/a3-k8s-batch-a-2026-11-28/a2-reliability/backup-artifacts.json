@@ -1,0 +1,28 @@
+{
+  "physical_archives": {
+    "data-chroma-0": {
+      "bytes": 5725278,
+      "filename": "data-chroma-0.tar.gz",
+      "pv": "pvc-25e1741f-5038-492e-b4c1-c23b90f9f786",
+      "pvc_uid": "25e1741f-5038-492e-b4c1-c23b90f9f786",
+      "sha256": "e2ce2e68aa6d8935964a545fd43d60b169250d5ac3b67ebc8c67830f40da41ad",
+      "verified_live_file_count": 6
+    },
+    "ragops-data": {
+      "bytes": 50224016,
+      "filename": "ragops-data.tar.gz",
+      "pv": "pvc-9335c82e-c1f5-45af-848a-7aa5cfe48293",
+      "pvc_uid": "9335c82e-c1f5-45af-848a-7aa5cfe48293",
+      "sha256": "edff55024a0bda37a59fd40cbf6bfb3e9ca063ec65c6ce645f4888672f5be544",
+      "verified_live_file_count": 41
+    }
+  },
+  "logical_export": {
+    "filename": "rahbar-a3-logical-export.json.gz",
+    "gzip_round_trip_verified": true,
+    "record_count": 642,
+    "sha256": "1c8572ddd2a212c5a8c7a7c4e90dcb2f60aa8e3ccb7bbf616b82c15b08c368de"
+  },
+  "artifact_storage": "Original backup artifacts are retained outside the repository.",
+  "baseline_fingerprint_file_sha256": "012e918e25f5c9e52abac29a31d46c7684f172b54e9792f163e3a504a3f097de"
+}

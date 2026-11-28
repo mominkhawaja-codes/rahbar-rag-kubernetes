@@ -1,0 +1,27 @@
+{
+  "baseline_index_id": "e15c5f0ab556",
+  "chunk_count": 642,
+  "chunk_embeddings": 0,
+  "collection_uuid": "fae06d6f-5449-4113-b2f1-b398cf483bdd",
+  "consistency": {
+    "duplicate_chroma_ids": [],
+    "duplicate_state_ids": [],
+    "metadata_mismatches": [],
+    "missing_ids": [],
+    "orphan_ids": []
+  },
+  "document_count": 14,
+  "duration_seconds": 31.0,
+  "index_id": "a7ea00b43ec0",
+  "index_state_sha256": "bddf6c66e5e80513a2ac776e81b3c041a7d451ee8b7712dab9b76882bb5e274a",
+  "job": "a3-recover-update-01",
+  "original_records_bitwise_equal": 642,
+  "partial_count": 645,
+  "removed_orphans": 3,
+  "state_serialization": {
+    "byte_identical": false,
+    "document_key_order_changed": true,
+    "parsed_state_equal": true
+  },
+  "verification_embeddings": 0
+}
