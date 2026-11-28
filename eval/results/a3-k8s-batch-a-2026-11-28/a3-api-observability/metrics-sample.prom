@@ -1,0 +1,15 @@
+process_resident_memory_bytes 1.077248e+08
+process_cpu_seconds_total 21.15
+rahbar_requests_total{path="/healthz",status="200"} 3.0
+rahbar_requests_total{path="/readyz",status="200"} 12.0
+rahbar_requests_total{path="/api/ask",status="200"} 3.0
+rahbar_request_seconds_count{path="/healthz"} 3.0
+rahbar_request_seconds_count{path="/readyz"} 12.0
+rahbar_request_seconds_count{path="/api/ask"} 3.0
+rahbar_retrieval_seconds_count 2.0
+rahbar_generation_seconds_count 2.0
+rahbar_retrieval_top_score_count 2.0
+rahbar_cache_total{result="miss"} 2.0
+rahbar_cache_total{result="hit"} 1.0
+rahbar_llm_tokens_total{direction="input",model="openai/gpt-oss-20b",provider="hosted"} 2596.0
+rahbar_llm_tokens_total{direction="output",model="openai/gpt-oss-20b",provider="hosted"} 645.0

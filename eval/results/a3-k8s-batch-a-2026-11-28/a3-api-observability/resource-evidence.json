@@ -1,0 +1,96 @@
+{
+  "metrics_api_sample": [
+    {
+      "pod": "a3-cache-api-694f5646b9-fp4x9",
+      "timestamp": "2026-11-28T09:48:34Z",
+      "window": "1m5.882s",
+      "containers": [
+        {
+          "name": "api",
+          "usage": {
+            "cpu": "159083649n",
+            "memory": "97080Ki"
+          }
+        }
+      ]
+    },
+    {
+      "pod": "chroma-0",
+      "timestamp": "2026-11-28T09:48:29Z",
+      "window": "1m4.39s",
+      "containers": [
+        {
+          "name": "chroma",
+          "usage": {
+            "cpu": "31503711n",
+            "memory": "70956Ki"
+          }
+        }
+      ]
+    }
+  ],
+  "limits_and_requests_after_adjustment": {
+    "deployment/a3-cache-api": [
+      {
+        "name": "api",
+        "resources": {
+          "limits": {
+            "cpu": "500m",
+            "memory": "512Mi"
+          },
+          "requests": {
+            "cpu": "200m",
+            "memory": "192Mi"
+          }
+        }
+      }
+    ],
+    "statefulset/chroma": [
+      {
+        "name": "chroma",
+        "resources": {
+          "limits": {
+            "cpu": "1",
+            "memory": "1Gi"
+          },
+          "requests": {
+            "cpu": "100m",
+            "memory": "256Mi"
+          }
+        }
+      }
+    ],
+    "cronjob/reindex": [
+      {
+        "name": "indexer",
+        "resources": {
+          "limits": {
+            "cpu": "1",
+            "memory": "1536Mi"
+          },
+          "requests": {
+            "cpu": "250m",
+            "memory": "512Mi"
+          }
+        }
+      }
+    ]
+  },
+  "completed_ingestion_pods": [
+    {
+      "pod": "a3-cache-index-change-01-59mlc",
+      "metrics_available": false
+    },
+    {
+      "pod": "a3-recover-update-01-mpvl5",
+      "metrics_available": false
+    }
+  ],
+  "prior_indexer_memory_reference": {
+    "peak_mib": 1129.8,
+    "source": "docs/ENGINEERING-NOTES.md (earlier full-corpus Docker measurement, outside this A3 run)"
+  },
+  "limitations": [
+    "Metrics samples represent a short smoke workload. Minikube did not retain CPU/memory usage for the completed A3 ingestion pods. No new ingestion was run to measure them."
+  ]
+}

@@ -203,11 +203,10 @@ When file transfer and evidence collection are finished, close the
 port-forward and run `Invoke-A3 delete pod lake-tools`. The PVCs remain. Keep
 the CronJob suspended until the controlled validation is finished.
 
-An A3 API can later use the same namespaced `rahbar-config` and Chroma Service.
-Give it a writable trace PVC with `TRACE_DIR` set to its mount and retain
-stdout traces. An evaluation Job can then reach the separate API Service via
-an explicit NetworkPolicy and mount a results PVC. Use port-forwarding or a
-separate hostname for the API so Assignment 02 keeps its current Ingress.
+Use the [A3 API and trace overlay](#run-the-a3-api-and-persist-traces) with
+the namespaced `rahbar-config` and Chroma Service. A future evaluation Job
+can reach the API Service through an explicit NetworkPolicy and mount a
+results PVC. The A3 overlay leaves the Assignment 02 Ingress separate.
 
 ## Live validation checkpoint
 
@@ -221,7 +220,113 @@ The weekly CronJob remained suspended.
 The local Assignment 02 API and UI were temporarily paused during validation.
 Keep the restoration settings in the local recovery notes.
 
-## Isolated API for cache invalidation
+## Run the A3 API and persist traces
+
+Apply this add-on after the ingestion overlay is ready and its `rahbar-a3`
+collection is populated. The Deployment retains the name `a3-cache-api` to
+adopt the earlier single-pod cache demonstration. It serves one Uvicorn
+worker through the `api` ClusterIP Service, uses the A3 Chroma and Ollama
+settings, and generates answers via Groq. The `a3-traces` claim persists
+per-pod JSONL files at `/data/traces` with UID/GID 10001. The same trace
+records go to container stdout. Use demo questions and control access to
+the volume because traces include prompts and retrieved document text.
+
+```powershell
+# Build and load only if the tracing-capable local tag is unavailable in Minikube.
+docker build -t rahbar-api:a3 ./api
+& $minikube -p $context image load rahbar-api:a3
+
+# Create once. The masked input is passed to kubectl on stdin.
+$maskedKey = Read-Host 'Groq API key for rahbar-a3' -AsSecureString
+if ($maskedKey.Length -eq 0) { throw 'A key is required' }
+$keyBuffer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($maskedKey)
+try {
+    $secret = @{
+        apiVersion = 'v1'; kind = 'Secret'; type = 'Opaque'
+        metadata = @{name = 'rahbar-a3-hosted'; namespace = 'rahbar-a3'}
+        stringData = @{LLM_API_KEY = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($keyBuffer)}
+    }
+    $secret | ConvertTo-Json -Depth 4 -Compress |
+        kubectl --context minikube -n rahbar-a3 create -f - -o name
+    if ($LASTEXITCODE -ne 0) { throw 'Secret creation failed' }
+} finally {
+    [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($keyBuffer)
+    Remove-Variable secret, maskedKey, keyBuffer -ErrorAction SilentlyContinue
+}
+
+Invoke-A3 apply --dry-run=server -k k8s/overlays/a3-api
+Invoke-A3 apply -k k8s/overlays/a3-api
+Invoke-A3 rollout status deployment/a3-cache-api --timeout=90s
+Invoke-A3 get pvc a3-traces
+```
+
+Run `kubectl --context minikube -n rahbar-a3 port-forward --address 127.0.0.1 svc/api 18034:80`
+in a second terminal. From the first terminal, send the same question twice
+on a fresh API process, then ask about the synthetic student-card policy.
+
+```powershell
+$prefix = 'a3-f4-' + [guid]::NewGuid().ToString('N').Substring(0,8)
+$normal = 'What is the curfew for hostel residents from Sunday to Thursday?'
+function Invoke-A3Trace($suffix, $question) {
+    $id = "$prefix-$suffix"
+    $response = Invoke-WebRequest -UseBasicParsing -Uri 'http://127.0.0.1:18034/api/ask' `
+        -Method Post -ContentType 'application/json' -Headers @{'X-Request-ID'=$id} `
+        -Body (@{question=$question} | ConvertTo-Json -Compress)
+    $response.Headers['X-Cache']
+    $response.Content
+}
+Invoke-A3Trace 'miss' $normal
+Invoke-A3Trace 'hit' $normal
+Invoke-A3Trace 'injection' 'How much does it cost to replace a lost student card?'
+((Invoke-WebRequest -UseBasicParsing 'http://127.0.0.1:18034/metrics').Content -split "`n") |
+    Select-String 'rahbar_cache_total|rahbar_retrieval_seconds_count|rahbar_generation_seconds_count'
+Invoke-A3 logs deploy/a3-cache-api -c api --tail=150 | Select-String $prefix
+Invoke-A3 top pods --containers
+
+$traceExport = New-Item -ItemType Directory -Path (Join-Path ([IO.Path]::GetTempPath()) $prefix)
+$pod = Invoke-A3 get pods -l 'app=api,validation=cache-invalidation' -o jsonpath='{.items[0].metadata.name}'
+Push-Location $traceExport.FullName
+try { Invoke-A3 cp -c api "${pod}:/data/traces" ./traces } finally { Pop-Location }
+$traceDir = Join-Path $traceExport.FullName 'traces'
+python eval/tools/trace_show.py "$prefix-hit" --dir $traceDir
+python eval/tools/trace_summary.py --dir $traceDir --last 1h
+```
+
+The cache-hit trace links to the request that built the prompt. Finish active
+work and end the Service port-forward before testing persistence. Restarting
+this Deployment resets its in-memory cache.
+
+```powershell
+$oldUid = Invoke-A3 get pod $pod -o jsonpath='{.metadata.uid}'
+$oldClaim = Invoke-A3 get pvc a3-traces -o jsonpath='{.metadata.uid}'
+$originalFiles = Get-ChildItem -LiteralPath $traceDir -Filter '*.jsonl'
+Invoke-A3 rollout restart deployment/a3-cache-api
+Invoke-A3 rollout status deployment/a3-cache-api --timeout=90s
+$newPod = Invoke-A3 get pods -l 'app=api,validation=cache-invalidation' -o jsonpath='{.items[0].metadata.name}'
+if ((Invoke-A3 get pod $newPod -o jsonpath='{.metadata.uid}') -eq $oldUid) { throw 'Pod UID did not change' }
+if ((Invoke-A3 get pvc a3-traces -o jsonpath='{.metadata.uid}') -ne $oldClaim) { throw 'Trace PVC changed' }
+Push-Location $traceExport.FullName
+try { Invoke-A3 cp -c api "${newPod}:/data/traces" ./traces-after } finally { Pop-Location }
+foreach ($file in $originalFiles) {
+    $copied = Join-Path (Join-Path $traceExport.FullName 'traces-after') $file.Name
+    if ((Get-FileHash -LiteralPath $file.FullName).Hash -ne (Get-FileHash -LiteralPath $copied).Hash) {
+        throw "Trace changed: $($file.Name)"
+    }
+}
+```
+
+The [live API and trace evidence](../eval/results/a3-k8s-batch-a-2026-11-28/a3-api-observability/README.md)
+records readiness, cache provenance, retrieved-injection handling, metrics,
+and trace-file persistence. The three-query smoke sample measured about
+159m CPU and 94.8 MiB working set for the API and 31.5m CPU and 69.3 MiB for
+Chroma. The API CPU request was raised from 100m to 200m after this sample.
+Chroma's limits were retained for ingestion phases. The Metrics API had no
+samples for completed ingestion pods, so the earlier full-corpus Docker peak
+of 1129.8 MiB remains the reference for the 1536 MiB indexer limit. Capture
+API, Chroma, and Job resource samples during the future evaluation run to
+complete the F5 measurements.
+
+## Earlier isolated API cache-invalidation demonstration
 
 Use one API pod and one worker in `rahbar-a3`, with `RETRIEVER=chroma`,
 `CHROMA_HOST=chroma`, `CHROMA_PORT=8000`, `CHROMA_COLLECTION=rahbar-a3`,

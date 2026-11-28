@@ -44,3 +44,11 @@ remain outside the commit. Native evidence is in
 actual structured logs. The [backup inventory](a2-reliability/backup-artifacts.json)
 records checksums for the local archives. No database copies or logical
 export records are stored here. The A3 CronJob remained suspended throughout.
+
+## A3 API and observability
+
+The [API and observability evidence](a3-api-observability/README.md) records
+hosted generation, cache provenance, a retrieved injection, matching stdout
+and PVC traces, trace-tool output, Prometheus metrics, and resource samples.
+The API rollout preserved all three recorded traces and read the existing
+642-chunk collection.

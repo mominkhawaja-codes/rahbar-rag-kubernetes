@@ -1,0 +1,1 @@
+{"status":"ready","checks":{"chroma":{"ok":true},"collection":{"ok":true,"count":642},"embed_pin":{"ok":true,"embed_model":"nomic-embed-text"}}}

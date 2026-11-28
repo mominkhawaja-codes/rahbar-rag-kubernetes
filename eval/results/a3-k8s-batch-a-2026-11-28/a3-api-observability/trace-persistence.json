@@ -1,0 +1,46 @@
+{
+  "result": "passed",
+  "original_pod": "a3-cache-api-694f5646b9-fp4x9",
+  "original_pod_uid": "5b66d725-fa86-44c7-9859-47c715e287f7",
+  "ready_replacement_pod": "a3-cache-api-949b9684c-jhbh5",
+  "replacement_pod_uid": "0a06593a-32cc-4c80-8ce8-a219ad81b857",
+  "restart_count": 0,
+  "same_trace_pvc": {
+    "name": "a3-traces",
+    "uid": "2dd27490-8178-49b5-a361-950890da3323",
+    "volume_name": "pvc-2dd27490-8178-49b5-a361-950890da3323",
+    "access_modes": [
+      "ReadWriteOnce"
+    ]
+  },
+  "unchanged_files": {
+    "traces-2026-11-28-a3-cache-api-694f5646b9-fp4x9.jsonl": {
+      "uid": 10001,
+      "gid": 10001,
+      "mode": "0o644",
+      "sha256": "835e4c9601759c9a4b41753e65690684aeee8d95751cb071c3b39327deccd9c7",
+      "bytes": 23903
+    }
+  },
+  "trace_ids_recovered": [
+    "a3-f4-1aab29a3-miss",
+    "a3-f4-1aab29a3-hit",
+    "a3-f4-1aab29a3-injection"
+  ],
+  "readyz": {
+    "status": "ready",
+    "checks": {
+      "chroma": {
+        "ok": true
+      },
+      "collection": {
+        "ok": true,
+        "count": 642
+      },
+      "embed_pin": {
+        "ok": true,
+        "embed_model": "nomic-embed-text"
+      }
+    }
+  }
+}
