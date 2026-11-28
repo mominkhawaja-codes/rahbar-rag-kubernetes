@@ -1,0 +1,113 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: a3-eval-results
+  namespace: rahbar-a3
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 128Mi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: a3-release-gate
+  namespace: rahbar-a3
+# Fill in the file and keys expected by the Part C2 gate before enabling the Job.
+# No threshold values have been approved for this scaffold.
+data: {}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: a3-eval
+  namespace: rahbar-a3
+spec:
+  suspend: true
+  backoffLimit: 0
+  template:
+    metadata:
+      labels: {app: a3-evaluator}
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: evaluator
+          # Set the actual Part B suite image and command before creating a runnable Job.
+          image: rahbar-eval:part-b-not-configured
+          imagePullPolicy: Never
+          command: ["/bin/sh", "-ec"]
+          args: ['echo "Part B evaluator and Part C gate are not configured" >&2; exit 64']
+          env:
+            - {name: EVAL_API_URL, value: "http://api"}
+            - {name: EVAL_RESULTS_DIR, value: /data/results}
+            - {name: EVAL_GATE_CONFIG_DIR, value: /etc/rahbar/release-gate}
+            - name: EMBED_MODEL
+              valueFrom:
+                configMapKeyRef: {name: rahbar-config, key: EMBED_MODEL}
+            - name: OLLAMA_URL
+              valueFrom:
+                configMapKeyRef: {name: rahbar-config, key: OLLAMA_URL}
+          # Provisional bounds for a single sequential runner. Measure in F5.
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: results, mountPath: /data/results}
+            - {name: gate, mountPath: /etc/rahbar/release-gate, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: results
+          persistentVolumeClaim: {claimName: a3-eval-results}
+        - name: gate
+          configMap: {name: a3-release-gate}
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: a3-evaluator-egress
+  namespace: rahbar-a3
+spec:
+  podSelector:
+    matchLabels: {app: a3-evaluator}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels: {app: api}
+            matchExpressions:
+              - {key: validation, operator: In, values: [cache-invalidation, part-c-candidate]}
+      ports: [{protocol: TCP, port: 8000}]
+    - to:
+        - ipBlock: {cidr: 0.0.0.0/0}
+      ports: [{protocol: TCP, port: 11434}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: a3-evaluator-to-api
+  namespace: rahbar-a3
+spec:
+  podSelector:
+    matchLabels: {app: api}
+    matchExpressions:
+      - {key: validation, operator: In, values: [cache-invalidation, part-c-candidate]}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {matchLabels: {app: a3-evaluator}}
+      ports: [{protocol: TCP, port: 8000}]

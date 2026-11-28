@@ -346,3 +346,94 @@ generation changes with that ID. A restarted pod would also have an empty
 in-memory cache, so keep the pod and worker running throughout the check.
 Use a dedicated A3 Redis service if the acceptance check needs Redis or
 multiple API replicas. Full tracing and evaluation can be configured separately.
+
+## F2 evaluation Job and F3 candidate preparation
+
+These manifests are scaffolds for Part B/C integration. The evaluation Job
+is suspended, uses a sentinel image tag, and has a placeholder command that
+fails. The gate ConfigMap is empty. The candidate Deployment has zero
+replicas and a sentinel image tag. Enable them only after the actual Part B/C
+code, versioned artifacts, gate configuration, and candidate collection are ready.
+
+### Evaluation Job
+
+`k8s/eval-job.yaml` declares `a3-eval`, the `a3-eval-results` results claim,
+the `a3-release-gate` ConfigMap, and NetworkPolicies for stable and candidate
+API access. The evaluator can also reach host Ollama for Part B embedding
+measurements. Only the Job mounts `/data/results` and the read-only gate
+directory `/etc/rahbar/release-gate`. The collector can read the resulting
+artifacts from the PVC after the pod exits.
+
+Before creating a runnable Job, fill in a per-run copy with the actual
+evaluator image, command and arguments, and a unique Job name. The manifest
+provides `EVAL_API_URL`, `EVAL_RESULTS_DIR`, and `EVAL_GATE_CONFIG_DIR` for
+that wiring. Point the baseline run at `http://api` and the candidate run at
+`http://api-candidate`. Add the real C2 configuration file to the ConfigMap
+using the gate's schema and agreed thresholds. Leave the Job suspended until
+these inputs are set. Job pod templates are immutable after execution starts.
+
+The Job process must save the timestamped result and the gate decision on the
+PVC, including on a gate failure. Use the actual suite and gate commands and
+propagate their exit status to the container. Compare matching evaluation
+conditions across baseline and candidate, including the cache policy. For F2,
+run again with one C2 threshold changed via the ConfigMap and retain both Job
+results and statuses. The indexer's verification thresholds serve a different
+purpose and stay in `rahbar-config`.
+
+### Candidate and promotion
+
+Inspect the candidate with `kubectl kustomize k8s/overlays/a3-candidate`.
+It reuses the A3 API template to render `a3-cache-api-candidate` and the
+`api-candidate` Service. Its selector, in-memory cache, and
+`rahbar-a3-candidate` collection are separate from the stable API. Candidate
+traces go to stdout. The stable API retains its trace PVC.
+
+Once the selected Part C change is known, populate only
+`rahbar-a3-candidate`. Use the existing indexer in a separate Job with a
+read-only snapshot of the verified corpus and separate writable lake, state,
+quarantine, archive, and report paths. Pin `CHROMA_COLLECTION` on that writer
+and verify the candidate's document set, index ID, embedding model, and
+dimensions before starting the candidate API. Keep `rahbar-a3` and its state
+intact. Use the matching commit-SHA API image, loaded into Minikube or pulled
+from the existing CI registry as appropriate, in place of the sentinel tag.
+
+Evaluate the candidate through its Service. Record a failed gate and leave
+the stable Deployment at its prior revision. For an approved candidate, first
+pin the stable image, collection, and embedding settings in the Deployment
+pod template or versioned ConfigMaps so a rollback can restore them. The
+current stable Deployment uses `Recreate`. Set a rolling strategy with
+`maxUnavailable: 0` for the controlled promotion, and verify capacity for
+one surge pod. Update the existing stable Deployment's image and index
+settings after approval and watch `kubectl rollout status`. Keep the previous
+collection and image available for the separate undo demonstration. Use
+`kubectl rollout undo` on the stable Deployment, then capture a fresh trace
+showing the restored collection and embedding version.
+
+### Integration handoff for Momin
+
+- [ ] Supply the exact Part B command and arguments, Python dependencies,
+  required assets, and the build context or immutable evaluator image.
+- [ ] Identify the golden dataset and baseline result by repository path and
+  revision. Record the corpus snapshot and model pins used for the baseline.
+- [ ] Provide the result JSON schema and output naming pattern under
+  `/data/results`, including the gate decision artifact on rejection.
+- [ ] Specify the concurrency, minimum request interval, request timeout,
+  rate-limit retry behavior, and overall Job deadline.
+- [ ] Provide the Part C gate command, its baseline and candidate inputs,
+  and exit codes for pass, rejection, and execution error. Only a successful
+  gate may authorize promotion.
+- [ ] Supply the reviewed threshold filename, schema, names, units, and
+  approved values for the `a3-release-gate` ConfigMap. Identify one threshold
+  change that demonstrates the gate outcome changing.
+- [ ] Identify the passing and failing candidate revisions, the exact image,
+  collection and embedding pins, the evaluation acceptance conditions, and
+  the previous stable revision to retain for the promotion and undo demo.
+
+Agree on the candidate corpus snapshot and separate writable indexing paths,
+image loading or registry access, and any network or Secret access the runner
+needs beyond the two API Services and Ollama. Use one Job at a time on the
+single-node Minikube setup. Confirm the evaluator can run as UID/GID 10001,
+write only to the results claim and temporary directory, and retain results
+without filename collisions. Check capacity for the stable API surge pod before
+promotion. F5 still needs live CPU and memory samples from the evaluator and
+the next required indexer Job.
