@@ -1,0 +1,36 @@
+# Apply separately for file transfer and evidence export, then remove the pod.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: lake-tools
+  namespace: rahbar-a3
+spec:
+  serviceAccountName: rahbar-indexer
+  automountServiceAccountToken: false
+  enableServiceLinks: false
+  restartPolicy: Never
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 10001
+    runAsGroup: 10001
+    fsGroup: 10001
+    seccompProfile: {type: RuntimeDefault}
+  containers:
+    - name: lake-tools
+      image: rahbar-indexer:a3
+      imagePullPolicy: IfNotPresent
+      command: ["sleep", "infinity"]
+      resources:
+        requests: {cpu: 10m, memory: 16Mi}
+        limits: {cpu: 100m, memory: 64Mi}
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: [ALL]
+      volumeMounts:
+        - {name: ragops-data, mountPath: /data}
+  volumes:
+    - name: ragops-data
+      persistentVolumeClaim:
+        claimName: ragops-data

@@ -1,0 +1,12 @@
+NAME                                  STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE   VOLUMEMODE
+persistentvolumeclaim/data-chroma-0   Bound    pvc-25e1741f-5038-492e-b4c1-c23b90f9f786   2Gi        RWO            standard       <unset>                 76s   Filesystem
+persistentvolumeclaim/ragops-data     Bound    pvc-9335c82e-c1f5-45af-848a-7aa5cfe48293   1Gi        RWO            standard       <unset>                 77s   Filesystem
+
+NAME                      READY   AGE   CONTAINERS   IMAGES
+statefulset.apps/chroma   1/1     78s   chroma       chromadb/chroma:1.0.12
+
+NAME                STATUS      COMPLETIONS   DURATION   AGE   CONTAINERS   IMAGES              SELECTOR
+job.batch/indexer   Suspended   0/1                      78s   indexer      rahbar-indexer:a3   batch.kubernetes.io/controller-uid=cc463045-31bd-4723-ac9c-33d5fd86aa28
+
+NAME                    SCHEDULE    TIMEZONE   SUSPEND   ACTIVE   LAST SCHEDULE   AGE   CONTAINERS   IMAGES              SELECTOR
+cronjob.batch/reindex   0 3 * * 0   <none>     True      0        <none>          79s   indexer      rahbar-indexer:a3   <none>

@@ -1,0 +1,66 @@
+{
+  "affected_chunk_ids_after": [
+    "hostel-residence-policy-2026-html-0000",
+    "hostel-residence-policy-2026-html-0001",
+    "hostel-residence-policy-2026-html-0002",
+    "hostel-residence-policy-2026-html-0003",
+    "hostel-residence-policy-2026-html-0004",
+    "hostel-residence-policy-2026-html-0005"
+  ],
+  "affected_chunk_ids_before": [
+    "hostel-residence-policy-2026-html-0000",
+    "hostel-residence-policy-2026-html-0001",
+    "hostel-residence-policy-2026-html-0002",
+    "hostel-residence-policy-2026-html-0003",
+    "hostel-residence-policy-2026-html-0004",
+    "hostel-residence-policy-2026-html-0005"
+  ],
+  "changed_text_ids": [
+    "hostel-residence-policy-2026-html-0003"
+  ],
+  "changed_vectors": [
+    "hostel-residence-policy-2026-html-0003"
+  ],
+  "chunks_after": 642,
+  "chunks_before": 642,
+  "consistency": {
+    "duplicate_chroma_ids": [],
+    "duplicate_state_ids": [],
+    "metadata_mismatches": [],
+    "missing_ids": [],
+    "orphan_ids": []
+  },
+  "document_id": "hostel-residence-policy-2026.html",
+  "index_id": "e5743feb6e9f",
+  "index_id_before": "6e665ec86456",
+  "ingestion": {
+    "by_document": {
+      "academic-rules-handbook-jun-2026.pdf": 74,
+      "annual-report-2019-20.pdf": 81,
+      "annual-report-2023-24.pdf": 297,
+      "examination-appeals-procedure-2026.md": 6,
+      "faculty-entrepreneurship-and-technical-start-ups-policy.pdf": 7,
+      "faculty-entrepreneurship-policy-2026-revision.pdf": 7,
+      "fee-structure-page.html": 7,
+      "grading-page.html": 6,
+      "hostel-residence-policy-2026.html": 6,
+      "library-borrowing-rules-2026.pdf": 6,
+      "prospectus-2026-academic-rules-and-regulations.pdf": 35,
+      "student-affairs-faq-2026.md": 5,
+      "student-handbook-jun-2026.pdf": 89,
+      "undergraduate-academic-rules-aug-2023.pdf": 16
+    },
+    "deleted": 0,
+    "embedded": 6,
+    "metadata_updated": 0,
+    "total_after": 642,
+    "upserted": 6
+  },
+  "job_duration_seconds": 43.0,
+  "new_curfew_chunk_ids": [
+    "hostel-residence-policy-2026-html-0003"
+  ],
+  "old_curfew_chunk_ids": [],
+  "unrelated_chunks_compared": 636,
+  "unrelated_differences": []
+}

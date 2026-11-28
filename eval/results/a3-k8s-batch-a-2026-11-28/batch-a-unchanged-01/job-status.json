@@ -1,0 +1,32 @@
+{
+  "activeDeadlineSeconds": 3600,
+  "name": "batch-a-unchanged-01",
+  "namespace": "rahbar-a3",
+  "status": {
+    "completionTime": "2026-11-28T05:40:30Z",
+    "conditions": [
+      {
+        "lastProbeTime": "2026-11-28T05:40:30Z",
+        "lastTransitionTime": "2026-11-28T05:40:30Z",
+        "message": "Reached expected number of succeeded pods",
+        "reason": "CompletionsReached",
+        "status": "True",
+        "type": "SuccessCriteriaMet"
+      },
+      {
+        "lastProbeTime": "2026-11-28T05:40:30Z",
+        "lastTransitionTime": "2026-11-28T05:40:30Z",
+        "message": "Reached expected number of succeeded pods",
+        "reason": "CompletionsReached",
+        "status": "True",
+        "type": "Complete"
+      }
+    ],
+    "ready": 0,
+    "startTime": "2026-11-28T05:40:01Z",
+    "succeeded": 1,
+    "terminating": 0,
+    "uncountedTerminatedPods": {}
+  },
+  "uid": "cfb1f461-8fdc-4033-bc8a-ba407e7db92e"
+}

@@ -1,0 +1,847 @@
+{
+  "run": {
+    "timestamp": "2026-11-28T05:50:12Z",
+    "near_duplicate_check": "done",
+    "corpus_dir": "/data/lake",
+    "quarantine_dir": "/data/quarantine",
+    "embed_model": "nomic-embed-text",
+    "min_chars": 200,
+    "near_dup_threshold": 0.98
+  },
+  "summary": {
+    "documents": 19,
+    "actions": {
+      "index": 13,
+      "supersede": 1,
+      "quarantine": 5
+    },
+    "failed_checks": {
+      "quality": 1,
+      "completeness": 2,
+      "recency": 1,
+      "uniqueness": 3
+    },
+    "indexed_versions": {
+      "current": 12,
+      "superseded": 2
+    },
+    "documents_with_warnings": 0,
+    "ocr_pages": 35
+  },
+  "documents": [
+    {
+      "source": "undergraduate-academic-rules-aug-2023.pdf",
+      "path": "/data/lake/undergraduate-academic-rules-aug-2023.pdf",
+      "doc_id": null,
+      "title": "Undergraduate Academic Rules (Aug 2023)",
+      "doc_version": "2023-08",
+      "declared_superseded": true,
+      "file_sha256": "cddfe1f5e9770132e27d686abd1c2e6742ef4732f0c2f431ed514bc1691d2004",
+      "text_sha256": "fa68b18d7b3a2686c2a39a449f8a9f02dad4c2f55ac2ca4710839b4e142bfee4",
+      "pages": 25,
+      "characters": 32843,
+      "ocr_pages": 23,
+      "ocr_pages_empty": 0,
+      "letter_ratio": 0.925,
+      "checks": {
+        "quality": {
+          "status": "pass",
+          "reason": "file unchanged since it was last verified; not extracted again"
+        },
+        "completeness": {
+          "status": "pass",
+          "reason": "file unchanged; title and version present"
+        },
+        "uniqueness": {
+          "status": "pass",
+          "reason": "no exact duplicate; no earlier retained document to compare with (later documents are compared with this one); nearest document overall: prospectus-2026-academic-rules-and-regulations.pdf at 0.9588 (threshold 0.98)"
+        },
+        "recency": {
+          "status": "pass",
+          "reason": "marked superseded in its source metadata; kept for archival"
+        }
+      },
+      "warnings": [],
+      "version_status": "superseded",
+      "superseded_by": null,
+      "action": "index",
+      "nearest": {
+        "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+        "cosine": 0.9588
+      },
+      "quarantined_to": null,
+      "quarantine_error": null
+    },
+    {
+      "source": "academic-rules-handbook-jun-2026.pdf",
+      "path": "/data/lake/academic-rules-handbook-jun-2026.pdf",
+      "doc_id": null,
+      "title": "Academic Rules Handbook (Jun 2026)",
+      "doc_version": "2026-06",
+      "declared_superseded": false,
+      "file_sha256": "4cfee3e191b84aeb9168f17656c7642212ff52b90f2780d028b33c154aa74b62",
+      "text_sha256": "3184bf63eb6be7130a817977b18ff8927c02e9925e228370f4fd6df590674860",
+      "pages": 55,
+      "characters": 58969,
+      "ocr_pages": 2,
+      "ocr_pages_empty": 0,
+      "letter_ratio": 0.944,
+      "checks": {
+        "quality": {
+          "status": "pass",
+          "reason": "file unchanged since it was last verified; not extracted again"
+        },
+        "completeness": {
+          "status": "pass",
+          "reason": "file unchanged; title and version present"
+        },
+        "uniqueness": {
+          "status": "pass",
+          "reason": "no exact duplicate; no earlier retained document to compare with (later documents are compared with this one); nearest document overall: student-handbook-jun-2026.pdf at 0.9611 (threshold 0.98)"
+        },
+        "recency": {
+          "status": "pass",
+          "reason": "no other version of this document"
+        }
+      },
+      "warnings": [],
+      "version_status": "current",
+      "superseded_by": null,
+      "action": "index",
+      "nearest": {
+        "source": "student-handbook-jun-2026.pdf",
+        "cosine": 0.9611
+      },
+      "quarantined_to": null,
+      "quarantine_error": null
+    },
+    {
+      "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+      "path": "/data/lake/prospectus-2026-academic-rules-and-regulations.pdf",
+      "doc_id": null,
+      "title": "Prospectus 2026 - Academic Rules and Regulations",
+      "doc_version": "2026",
+      "declared_superseded": false,
+      "file_sha256": "a7e7f6896a59eb9413c9e8826e6c4c018ebe52045d10cebfcba92ded10a3174a",
+      "text_sha256": "95bbe0efacbddae86d50bc6d0303fea841b0a24a74d722202fbfc0e88a31143a",
+      "pages": 5,
+      "characters": 20683,
+      "ocr_pages": 0,
+      "ocr_pages_empty": 0,
+      "letter_ratio": 0.951,
+      "checks": {
+        "quality": {
+          "status": "pass",
+          "reason": "file unchanged since it was last verified; not extracted again"
+        },
+        "completeness": {
+          "status": "pass",
+          "reason": "file unchanged; title and version present"
+        },
+        "uniqueness": {
+          "status": "pass",
+          "reason": "no exact duplicate; highest similarity to an earlier retained document: academic-rules-handbook-jun-2026.pdf at 0.9006; nearest document overall: undergraduate-academic-rules-aug-2023.pdf at 0.9588 (threshold 0.98)"
+        },
+        "recency": {
+          "status": "pass",
+          "reason": "no other version of this document"
+        }
+      },
+      "warnings": [],
+      "version_status": "current",
+      "superseded_by": null,
+      "action": "index",
+      "nearest": {
+        "source": "undergraduate-academic-rules-aug-2023.pdf",
+        "cosine": 0.9588
+      },
+      "quarantined_to": null,
+      "quarantine_error": null
+    },
+    {
+      "source": "student-handbook-jun-2026.pdf",
+      "path": "/data/lake/student-handbook-jun-2026.pdf",
+      "doc_id": null,
+      "title": "Student Handbook (Jun 2026)",
+      "doc_version": "2026-06",
+      "declared_superseded": false,
+      "file_sha256": "717eb4b8d37e50185ffe952735c08ef19edd16074d547f10ebd22cf23da67c4d",
+      "text_sha256": "9e007c9d745414267522e7d261daa7ad4dd17cde8261ba3c23e50b368b489878",
+      "pages": 62,
+      "characters": 68593,
+      "ocr_pages": 2,
+      "ocr_pages_empty": 0,
+      "letter_ratio": 0.958,
+      "checks": {
+        "quality": {
+          "status": "pass",
+          "reason": "file unchanged since it was last verified; not extracted again"
+        },
+        "completeness": {
+          "status": "pass",
+          "reason": "file unchanged; title and version present"
+        },
+        "uniqueness": {
+          "status": "pass",
+          "reason": "no exact duplicate; highest similarity to an earlier retained document: academic-rules-handbook-jun-2026.pdf at 0.9611; nearest document overall: academic-rules-handbook-jun-2026.pdf at 0.9611 (threshold 0.98)"
+        },
+        "recency": {
+          "status": "pass",
+          "reason": "no other version of this document"
+        }
+      },
+      "warnings": [],
+      "version_status": "current",
+      "superseded_by": null,
+      "action": "index",
+      "nearest": {
+        "source": "academic-rules-handbook-jun-2026.pdf",
+        "cosine": 0.9611
+      },
+      "quarantined_to": null,
+      "quarantine_error": null
+    },
+    {
+      "source": "annual-report-2019-20.pdf",
+      "path": "/data/lake/annual-report-2019-20.pdf",
+      "doc_id": null,
+      "title": "Annual Report 2019-20",
+      "doc_version": "2019-20",
+      "declared_superseded": false,
+      "file_sha256": "4d1961e340b13273bb039805ab5fd5e2c7bd0144a5bd5870f2ce4da13becd650",
+      "text_sha256": "55d4589f78e6310b2396307317857fecfd7c5fb838f0077b65505692dc85176e",
+      "pages": 33,
+      "characters": 47044,
+      "ocr_pages": 0,
+      "ocr_pages_empty": 0,
+      "letter_ratio": 0.945,
+      "checks": {
+        "quality": {
+          "status": "pass",
+          "reason": "file unchanged since it was last verified; not extracted again"
+        },
+        "completeness": {
+          "status": "pass",
+          "reason": "file unchanged; title and version present"
+        },
+        "uniqueness": {
+          "status": "pass",
+          "reason": "no exact duplicate; highest similarity to an earlier retained document: student-handbook-jun-2026.pdf at 0.9187; nearest document overall: annual-report-2019-20-mirror.pdf at 1.0000 (threshold 0.98)"
+        },
+        "recency": {
+          "status": "pass",
+          "reason": "no other version of this document"
+        }
+      },
+      "warnings": [],
+      "version_status": "current",
+      "superseded_by": null,
+      "action": "index",
+      "nearest": {
+        "source": "annual-report-2019-20-mirror.pdf",
+        "cosine": 1.0
+      },
+      "quarantined_to": null,
+      "quarantine_error": null
+    },
+    {
+      "source": "annual-report-2023-24.pdf",
+      "path": "/data/lake/annual-report-2023-24.pdf",
+      "doc_id": null,
+      "title": "Annual Report 2023-24",
+      "doc_version": "2023-24",
+      "declared_superseded": false,
+      "file_sha256": "3c9d89e84af24df4b939f10e32c620a3877b276acea1db52f1aae4098e5c057a",
+      "text_sha256": "d22d3a2949f2b0f9972d0178462023ba8427609b7716800ec55cee5de005df20",
+      "pages": 85,
+      "characters": 195103,
+      "ocr_pages": 0,
+      "ocr_pages_empty": 0,
+      "letter_ratio": 0.94,
+      "checks": {
+        "quality": {
+          "status": "pass",
+          "reason": "file unchanged since it was last verified; not extracted again"
+        },
+        "completeness": {
+          "status": "pass",
+          "reason": "file unchanged; title and version present"
+        },
+        "uniqueness": {
+          "status": "pass",
+          "reason": "no exact duplicate; highest similarity to an earlier retained document: annual-report-2019-20.pdf at 0.9475; nearest document overall: annual-report-2019-20.pdf at 0.9475 (threshold 0.98)"
+        },
+        "recency": {
+          "status": "pass",
+          "reason": "no other version of this document"
+        }
+      },
+      "warnings": [],
+      "version_status": "current",
+      "superseded_by": null,
+      "action": "index",
+      "nearest": {
+        "source": "annual-report-2019-20.pdf",
+        "cosine": 0.9475
+      },
+      "quarantined_to": null,
+      "quarantine_error": null
+    },
+    {
+      "source": "fee-structure-page.html",
+      "path": "/data/lake/fee-structure-page.html",
+      "doc_id": null,
+      "title": "Fee Structure page",
+      "doc_version": "2026-27",
+      "declared_superseded": false,
+      "file_sha256": "ec8872ae77cac7e96e20e6979933f36b00aaeb0ab3f668a2116e521c655e7b90",
+      "text_sha256": "e47163ea4e7e46ebced014bdd15d5ee46c65b21cf52a03f7f848e702c3d55431",
+      "pages": 1,
+      "characters": 3706,
+      "ocr_pages": 0,
+      "ocr_pages_empty": 0,
+      "letter_ratio": 0.875,
+      "checks": {
+        "quality": {
+          "status": "pass",
+          "reason": "file unchanged since it was last verified; not extracted again"
+        },
+        "completeness": {
+          "status": "pass",
+          "reason": "file unchanged; title and version present"
+        },
+        "uniqueness": {
+          "status": "pass",
+          "reason": "no exact duplicate; highest similarity to an earlier retained document: prospectus-2026-academic-rules-and-regulations.pdf at 0.8289; nearest document overall: fee-structure-page-2026-27-download.html at 1.0000 (threshold 0.98)"
+        },
+        "recency": {
+          "status": "pass",
+          "reason": "no other version of this document"
+        }
+      },
+      "warnings": [],
+      "version_status": "current",
+      "superseded_by": null,
+      "action": "index",
+      "nearest": {
+        "source": "fee-structure-page-2026-27-download.html",
+        "cosine": 1.0
+      },
+      "quarantined_to": null,
+      "quarantine_error": null
+    },
+    {
+      "source": "grading-page.html",
+      "path": "/data/lake/grading-page.html",
+      "doc_id": null,
+      "title": "Grading page",
+      "doc_version": "2026",
+      "declared_superseded": false,
+      "file_sha256": "66a995b4d8474e914d37bfa14755a5361f47327d5a7314f9b7ec15d9b6176e6e",
+      "text_sha256": "b177a725dac8b0355252873ff9cf57a69c8ad82a86ce2c46d974797364fe818f",
+      "pages": 1,
+      "characters": 4896,
+      "ocr_pages": 0,
+      "ocr_pages_empty": 0,
+      "letter_ratio": 0.883,
+      "checks": {
+        "quality": {
+          "status": "pass",
+          "reason": "file unchanged since it was last verified; not extracted again"
+        },
+        "completeness": {
+          "status": "pass",
+          "reason": "file unchanged; title and version present"
+        },
+        "uniqueness": {
+          "status": "pass",
+          "reason": "no exact duplicate; highest similarity to an earlier retained document: prospectus-2026-academic-rules-and-regulations.pdf at 0.8979; nearest document overall: prospectus-2026-academic-rules-and-regulations.pdf at 0.8979 (threshold 0.98)"
+        },
+        "recency": {
+          "status": "pass",
+          "reason": "no other version of this document"
+        }
+      },
+      "warnings": [],
+      "version_status": "current",
+      "superseded_by": null,
+      "action": "index",
+      "nearest": {
+        "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+        "cosine": 0.8979
+      },
+      "quarantined_to": null,
+      "quarantine_error": null
+    },
+    {
+      "source": "faculty-entrepreneurship-and-technical-start-ups-policy.pdf",
+      "path": "/data/lake/faculty-entrepreneurship-and-technical-start-ups-policy.pdf",
+      "doc_id": "faculty-entrepreneurship-policy",
+      "title": "Faculty Entrepreneurship and Technical Start-ups Policy",
+      "doc_version": "2022-05",
+      "declared_superseded": false,
+      "file_sha256": "c2d5c7648d1593daf34d5c0596ede476e8984b0551830cc1690017e6e22f1359",
+      "text_sha256": "97fb354440c8ba95f2c693e73a1d63ee81befdec264cfcc04131086f2eac06fb",
+      "pages": 8,
+      "characters": 11878,
+      "ocr_pages": 8,
+      "ocr_pages_empty": 0,
+      "letter_ratio": 0.946,
+      "checks": {
+        "quality": {
+          "status": "pass",
+          "reason": "file unchanged since it was last verified; not extracted again"
+        },
+        "completeness": {
+          "status": "pass",
+          "reason": "file unchanged; title and version present"
+        },
+        "uniqueness": {
+          "status": "pass",
+          "reason": "no exact duplicate; highest similarity to an earlier retained document: student-handbook-jun-2026.pdf at 0.8528; nearest document overall: faculty-entrepreneurship-policy-2026-revision.pdf at 0.9396 (threshold 0.98)"
+        },
+        "recency": {
+          "status": "fail",
+          "reason": "superseded by faculty-entrepreneurship-policy-2026-revision.pdf (version 2026-09, this is 2022-05); kept for archival"
+        }
+      },
+      "warnings": [],
+      "version_status": "superseded",
+      "superseded_by": "faculty-entrepreneurship-policy-2026-revision.pdf",
+      "action": "supersede",
+      "nearest": {
+        "source": "faculty-entrepreneurship-policy-2026-revision.pdf",
+        "cosine": 0.9396
+      },
+      "quarantined_to": null,
+      "quarantine_error": null
+    },
+    {
+      "source": "library-borrowing-rules-2026.pdf",
+      "path": "/data/lake/library-borrowing-rules-2026.pdf",
+      "doc_id": null,
+      "title": "Library Borrowing and Reservation Rules (Fall 2026)",
+      "doc_version": "2026-09",
+      "declared_superseded": false,
+      "file_sha256": "ca8a4d557fb0dcad807d76ee505d3aa5fc2c983d5d158697e2665feeaf62596d",
+      "text_sha256": "51288aa15354137351b49a87e173b7d835089c34658ea1107a742eefecb57bde",
+      "pages": 1,
+      "characters": 2047,
+      "ocr_pages": 0,
+      "ocr_pages_empty": 0,
+      "letter_ratio": 0.917,
+      "checks": {
+        "quality": {
+          "status": "pass",
+          "reason": "2047 characters, 92% letters"
+        },
+        "completeness": {
+          "status": "pass",
+          "reason": "title, version and 1 page(s) present; no structural sign of truncation"
+        },
+        "uniqueness": {
+          "status": "pass",
+          "reason": "no exact duplicate; highest similarity to an earlier retained document: prospectus-2026-academic-rules-and-regulations.pdf at 0.8071; nearest document overall: student-affairs-faq-2026.md at 0.8324 (threshold 0.98)"
+        },
+        "recency": {
+          "status": "pass",
+          "reason": "no other version of this document"
+        }
+      },
+      "warnings": [],
+      "version_status": "current",
+      "superseded_by": null,
+      "action": "index",
+      "nearest": {
+        "source": "student-affairs-faq-2026.md",
+        "cosine": 0.8324
+      },
+      "quarantined_to": null,
+      "quarantine_error": null
+    },
+    {
+      "source": "hostel-residence-policy-2026.html",
+      "path": "/data/lake/hostel-residence-policy-2026.html",
+      "doc_id": null,
+      "title": "Hostel Residence Policy (Fall 2026)",
+      "doc_version": "2026-09",
+      "declared_superseded": false,
+      "file_sha256": "39a6f9a476d126304ccdde564530943f15f0b4bafc42a1af3aaedf984dcb8cfb",
+      "text_sha256": "df57b47277261d94820dcdf2db9bfb23fb22ef0b363474da6969b0030597fad6",
+      "pages": 1,
+      "characters": 1820,
+      "ocr_pages": 0,
+      "ocr_pages_empty": 0,
+      "letter_ratio": 0.89,
+      "checks": {
+        "quality": {
+          "status": "pass",
+          "reason": "1820 characters, 89% letters"
+        },
+        "completeness": {
+          "status": "pass",
+          "reason": "title, version and 1 page(s) present; no structural sign of truncation"
+        },
+        "uniqueness": {
+          "status": "pass",
+          "reason": "no exact duplicate; highest similarity to an earlier retained document: fee-structure-page.html at 0.8129; nearest document overall: fee-structure-page-2026-27-download.html at 0.8129 (threshold 0.98)"
+        },
+        "recency": {
+          "status": "pass",
+          "reason": "no other version of this document"
+        }
+      },
+      "warnings": [],
+      "version_status": "current",
+      "superseded_by": null,
+      "action": "index",
+      "nearest": {
+        "source": "fee-structure-page-2026-27-download.html",
+        "cosine": 0.8129
+      },
+      "quarantined_to": null,
+      "quarantine_error": null
+    },
+    {
+      "source": "examination-appeals-procedure-2026.md",
+      "path": "/data/lake/examination-appeals-procedure-2026.md",
+      "doc_id": null,
+      "title": "Examination Result Appeals Procedure (Fall 2026)",
+      "doc_version": "2026-09",
+      "declared_superseded": false,
+      "file_sha256": "3b010126bacf74e63f1ecc6a73a31e645fae27326a5620e2c3e487f5662b8df1",
+      "text_sha256": "ecdcfa0a59b4296c4a8fe27f7fe9371874587be55334ba02879369eaa341c065",
+      "pages": 1,
+      "characters": 1877,
+      "ocr_pages": 0,
+      "ocr_pages_empty": 0,
+      "letter_ratio": 0.928,
+      "checks": {
+        "quality": {
+          "status": "pass",
+          "reason": "1877 characters, 93% letters"
+        },
+        "completeness": {
+          "status": "pass",
+          "reason": "title, version and 1 page(s) present; no structural sign of truncation"
+        },
+        "uniqueness": {
+          "status": "pass",
+          "reason": "no exact duplicate; highest similarity to an earlier retained document: prospectus-2026-academic-rules-and-regulations.pdf at 0.8521; nearest document overall: examination-appeals-procedure-2026-reissue.md at 0.9919 (threshold 0.98)"
+        },
+        "recency": {
+          "status": "pass",
+          "reason": "no other version of this document"
+        }
+      },
+      "warnings": [],
+      "version_status": "current",
+      "superseded_by": null,
+      "action": "index",
+      "nearest": {
+        "source": "examination-appeals-procedure-2026-reissue.md",
+        "cosine": 0.9919
+      },
+      "quarantined_to": null,
+      "quarantine_error": null
+    },
+    {
+      "source": "examination-appeals-procedure-2026-reissue.md",
+      "path": "/data/lake/examination-appeals-procedure-2026-reissue.md",
+      "doc_id": null,
+      "title": "Examination Result Appeals Procedure (Fall 2026)",
+      "doc_version": "2026-09",
+      "declared_superseded": false,
+      "file_sha256": "080458aa9deacc71d229948f55650712f5c8f8fd71f3b31f6f0ac805bdb9280f",
+      "text_sha256": "1370ff7169b27b0d043af7788a10000c57106d2e4c75c1c9cc8bc8ff0640debd",
+      "pages": 1,
+      "characters": 1978,
+      "ocr_pages": 0,
+      "ocr_pages_empty": 0,
+      "letter_ratio": 0.931,
+      "checks": {
+        "quality": {
+          "status": "pass",
+          "reason": "1978 characters, 93% letters"
+        },
+        "completeness": {
+          "status": "pass",
+          "reason": "title, version and 1 page(s) present; no structural sign of truncation"
+        },
+        "uniqueness": {
+          "status": "fail",
+          "reason": "near-duplicate of examination-appeals-procedure-2026.md (document cosine 0.9919 >= 0.98)"
+        },
+        "recency": {
+          "status": "pass",
+          "reason": "no other version of this document"
+        }
+      },
+      "warnings": [],
+      "version_status": "current",
+      "superseded_by": null,
+      "action": "quarantine",
+      "nearest": {
+        "source": "examination-appeals-procedure-2026.md",
+        "cosine": 0.9919
+      },
+      "quarantined_to": "/data/quarantine/examination-appeals-procedure-2026-reissue.md",
+      "quarantine_error": null
+    },
+    {
+      "source": "fee-structure-page-2026-27-download.html",
+      "path": "/data/lake/fee-structure-page-2026-27-download.html",
+      "doc_id": null,
+      "title": "Fee Structure page",
+      "doc_version": "2026-27",
+      "declared_superseded": false,
+      "file_sha256": "ec8872ae77cac7e96e20e6979933f36b00aaeb0ab3f668a2116e521c655e7b90",
+      "text_sha256": "e47163ea4e7e46ebced014bdd15d5ee46c65b21cf52a03f7f848e702c3d55431",
+      "pages": 1,
+      "characters": 3706,
+      "ocr_pages": 0,
+      "ocr_pages_empty": 0,
+      "letter_ratio": 0.875,
+      "checks": {
+        "quality": {
+          "status": "pass",
+          "reason": "3706 characters, 88% letters"
+        },
+        "completeness": {
+          "status": "pass",
+          "reason": "title, version and 1 page(s) present; no structural sign of truncation"
+        },
+        "uniqueness": {
+          "status": "fail",
+          "reason": "exact duplicate of fee-structure-page.html (same sha256 of the text)"
+        },
+        "recency": {
+          "status": "pass",
+          "reason": "no other version of this document"
+        }
+      },
+      "warnings": [],
+      "version_status": "current",
+      "superseded_by": null,
+      "action": "quarantine",
+      "nearest": {
+        "source": "fee-structure-page.html",
+        "cosine": 1.0
+      },
+      "quarantined_to": "/data/quarantine/fee-structure-page-2026-27-download.html",
+      "quarantine_error": null
+    },
+    {
+      "source": "annual-report-2019-20-mirror.pdf",
+      "path": "/data/lake/annual-report-2019-20-mirror.pdf",
+      "doc_id": null,
+      "title": "Annual Report 2019-20",
+      "doc_version": "2019-20",
+      "declared_superseded": false,
+      "file_sha256": "4d1961e340b13273bb039805ab5fd5e2c7bd0144a5bd5870f2ce4da13becd650",
+      "text_sha256": "55d4589f78e6310b2396307317857fecfd7c5fb838f0077b65505692dc85176e",
+      "pages": 33,
+      "characters": 47044,
+      "ocr_pages": 0,
+      "ocr_pages_empty": 0,
+      "letter_ratio": 0.945,
+      "checks": {
+        "quality": {
+          "status": "pass",
+          "reason": "47044 characters, 94% letters"
+        },
+        "completeness": {
+          "status": "pass",
+          "reason": "title, version and 33 page(s) present; no structural sign of truncation"
+        },
+        "uniqueness": {
+          "status": "fail",
+          "reason": "exact duplicate of annual-report-2019-20.pdf (same sha256 of the text)"
+        },
+        "recency": {
+          "status": "pass",
+          "reason": "no other version of this document"
+        }
+      },
+      "warnings": [],
+      "version_status": "current",
+      "superseded_by": null,
+      "action": "quarantine",
+      "nearest": {
+        "source": "annual-report-2019-20.pdf",
+        "cosine": 1.0
+      },
+      "quarantined_to": "/data/quarantine/annual-report-2019-20-mirror.pdf",
+      "quarantine_error": null
+    },
+    {
+      "source": "student-clubs-and-societies-guide-2026.pdf",
+      "path": "/data/lake/student-clubs-and-societies-guide-2026.pdf",
+      "doc_id": null,
+      "title": "Student Clubs and Societies Guide (Fall 2026)",
+      "doc_version": "2026-09",
+      "declared_superseded": false,
+      "file_sha256": "4b75d1ef1571dbc47d0df36628daeda590f6629e621aaa9ea691295cb05b294d",
+      "text_sha256": null,
+      "pages": 0,
+      "characters": 0,
+      "ocr_pages": null,
+      "ocr_pages_empty": null,
+      "letter_ratio": null,
+      "checks": {
+        "quality": {
+          "status": "fail",
+          "reason": "extraction failed: PdfminerException: Unexpected EOF"
+        },
+        "completeness": {
+          "status": "fail",
+          "reason": "page count unknown (no extracted text); file hash differs from the recorded sha256 (corrupt or truncated)"
+        },
+        "uniqueness": {
+          "status": "pass",
+          "reason": "no usable text to compare"
+        },
+        "recency": {
+          "status": "pass",
+          "reason": "no other version of this document"
+        }
+      },
+      "warnings": [],
+      "version_status": "current",
+      "superseded_by": null,
+      "action": "quarantine",
+      "nearest": null,
+      "quarantined_to": "/data/quarantine/student-clubs-and-societies-guide-2026.pdf",
+      "quarantine_error": null
+    },
+    {
+      "source": "campus-shuttle-service-notice.html",
+      "path": "/data/lake/campus-shuttle-service-notice.html",
+      "doc_id": null,
+      "title": null,
+      "doc_version": null,
+      "declared_superseded": false,
+      "file_sha256": "3490101d75314e5941d9219503cc7918b8a0101c96b016d789c678bf85ca01e8",
+      "text_sha256": "37eab71aff5226e7483d8a21c4fa49779e3213faf4aeef9e4f698e5a95044bca",
+      "pages": 1,
+      "characters": 908,
+      "ocr_pages": 0,
+      "ocr_pages_empty": 0,
+      "letter_ratio": 0.881,
+      "checks": {
+        "quality": {
+          "status": "pass",
+          "reason": "908 characters, 88% letters"
+        },
+        "completeness": {
+          "status": "fail",
+          "reason": "title missing; version/date missing"
+        },
+        "uniqueness": {
+          "status": "pass",
+          "reason": "no exact duplicate; highest similarity to an earlier retained document: hostel-residence-policy-2026.html at 0.7588; nearest document overall: hostel-residence-policy-2026.html at 0.7588 (threshold 0.98)"
+        },
+        "recency": {
+          "status": "pass",
+          "reason": "no other version of this document"
+        }
+      },
+      "warnings": [],
+      "version_status": "current",
+      "superseded_by": null,
+      "action": "quarantine",
+      "nearest": {
+        "source": "hostel-residence-policy-2026.html",
+        "cosine": 0.7588
+      },
+      "quarantined_to": "/data/quarantine/campus-shuttle-service-notice.html",
+      "quarantine_error": null
+    },
+    {
+      "source": "faculty-entrepreneurship-policy-2026-revision.pdf",
+      "path": "/data/lake/faculty-entrepreneurship-policy-2026-revision.pdf",
+      "doc_id": "faculty-entrepreneurship-policy",
+      "title": "Faculty Entrepreneurship / Technical Start-ups Policy and Procedure (2026 Revision)",
+      "doc_version": "2026-09",
+      "declared_superseded": false,
+      "file_sha256": "777e95fa073f31cb932bdf3ad1f8484e5e6641e08e9f889b815e968f69af684a",
+      "text_sha256": "d3483abeef0d1e21ae24de8e424679b572eea0236490be3ae2b155e0975784d5",
+      "pages": 2,
+      "characters": 2604,
+      "ocr_pages": 0,
+      "ocr_pages_empty": 0,
+      "letter_ratio": 0.925,
+      "checks": {
+        "quality": {
+          "status": "pass",
+          "reason": "2604 characters, 92% letters"
+        },
+        "completeness": {
+          "status": "pass",
+          "reason": "title, version and 2 page(s) present; no structural sign of truncation"
+        },
+        "uniqueness": {
+          "status": "pass",
+          "reason": "no exact duplicate; highest similarity to an earlier retained document: student-handbook-jun-2026.pdf at 0.8097; nearest document overall: faculty-entrepreneurship-and-technical-start-ups-policy.pdf at 0.9396 (threshold 0.98)"
+        },
+        "recency": {
+          "status": "pass",
+          "reason": "newest version of faculty-entrepreneurship-policy"
+        }
+      },
+      "warnings": [],
+      "version_status": "current",
+      "superseded_by": null,
+      "action": "index",
+      "nearest": {
+        "source": "faculty-entrepreneurship-and-technical-start-ups-policy.pdf",
+        "cosine": 0.9396
+      },
+      "quarantined_to": null,
+      "quarantine_error": null
+    },
+    {
+      "source": "student-affairs-faq-2026.md",
+      "path": "/data/lake/student-affairs-faq-2026.md",
+      "doc_id": null,
+      "title": "Student Affairs Frequently Asked Questions (Fall 2026)",
+      "doc_version": "2026-09",
+      "declared_superseded": false,
+      "file_sha256": "94ca4a723bea39e51fc4d138a8b6a98d34b85d86c3e45451f3557418546dd5c1",
+      "text_sha256": "f526a71876f26b949aebd5bd815bc1c5257bb70dc09cf18a59d045a9386e1f34",
+      "pages": 1,
+      "characters": 1414,
+      "ocr_pages": 0,
+      "ocr_pages_empty": 0,
+      "letter_ratio": 0.911,
+      "checks": {
+        "quality": {
+          "status": "pass",
+          "reason": "1414 characters, 91% letters"
+        },
+        "completeness": {
+          "status": "pass",
+          "reason": "title, version and 1 page(s) present; no structural sign of truncation"
+        },
+        "uniqueness": {
+          "status": "pass",
+          "reason": "no exact duplicate; highest similarity to an earlier retained document: library-borrowing-rules-2026.pdf at 0.8324; nearest document overall: library-borrowing-rules-2026.pdf at 0.8324 (threshold 0.98)"
+        },
+        "recency": {
+          "status": "pass",
+          "reason": "no other version of this document"
+        }
+      },
+      "warnings": [],
+      "version_status": "current",
+      "superseded_by": null,
+      "action": "index",
+      "nearest": {
+        "source": "library-borrowing-rules-2026.pdf",
+        "cosine": 0.8324
+      },
+      "quarantined_to": null,
+      "quarantine_error": null
+    }
+  ]
+}

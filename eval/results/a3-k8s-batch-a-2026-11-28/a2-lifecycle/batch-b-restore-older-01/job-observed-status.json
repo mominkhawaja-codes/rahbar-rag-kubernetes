@@ -1,0 +1,30 @@
+{
+  "name": "batch-b-restore-older-01",
+  "status": {
+    "completionTime": "2026-11-28T06:16:49Z",
+    "conditions": [
+      {
+        "lastProbeTime": "2026-11-28T06:16:49Z",
+        "lastTransitionTime": "2026-11-28T06:16:49Z",
+        "message": "Reached expected number of succeeded pods",
+        "reason": "CompletionsReached",
+        "status": "True",
+        "type": "SuccessCriteriaMet"
+      },
+      {
+        "lastProbeTime": "2026-11-28T06:16:49Z",
+        "lastTransitionTime": "2026-11-28T06:16:49Z",
+        "message": "Reached expected number of succeeded pods",
+        "reason": "CompletionsReached",
+        "status": "True",
+        "type": "Complete"
+      }
+    ],
+    "ready": 0,
+    "startTime": "2026-11-28T06:16:31Z",
+    "succeeded": 1,
+    "terminating": 0,
+    "uncountedTerminatedPods": {}
+  },
+  "uid": "0a69e0c1-60d6-42b7-885a-6a86ef5540a1"
+}

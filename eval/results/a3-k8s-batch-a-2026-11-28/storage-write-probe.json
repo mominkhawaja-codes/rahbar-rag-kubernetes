@@ -1,0 +1,13 @@
+{
+  "uid": 10001,
+  "gid": 10001,
+  "writable": [
+    "/data/lake",
+    "/data/quarantine",
+    "/data/archive",
+    "/data/state",
+    "/data/reports"
+  ],
+  "fresh_lake": true,
+  "fresh_state": true
+}

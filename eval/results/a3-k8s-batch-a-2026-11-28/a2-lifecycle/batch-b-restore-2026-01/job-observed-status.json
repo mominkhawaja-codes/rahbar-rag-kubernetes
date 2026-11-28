@@ -1,0 +1,30 @@
+{
+  "name": "batch-b-restore-2026-01",
+  "status": {
+    "completionTime": "2026-11-28T06:18:06Z",
+    "conditions": [
+      {
+        "lastProbeTime": "2026-11-28T06:18:06Z",
+        "lastTransitionTime": "2026-11-28T06:18:06Z",
+        "message": "Reached expected number of succeeded pods",
+        "reason": "CompletionsReached",
+        "status": "True",
+        "type": "SuccessCriteriaMet"
+      },
+      {
+        "lastProbeTime": "2026-11-28T06:18:06Z",
+        "lastTransitionTime": "2026-11-28T06:18:06Z",
+        "message": "Reached expected number of succeeded pods",
+        "reason": "CompletionsReached",
+        "status": "True",
+        "type": "Complete"
+      }
+    ],
+    "ready": 0,
+    "startTime": "2026-11-28T06:17:35Z",
+    "succeeded": 1,
+    "terminating": 0,
+    "uncountedTerminatedPods": {}
+  },
+  "uid": "56b3d37d-9758-4ede-9721-6b673e81022e"
+}

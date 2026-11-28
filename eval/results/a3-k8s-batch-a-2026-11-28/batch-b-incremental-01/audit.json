@@ -1,0 +1,174 @@
+{
+  "accepted": [
+    "examination-appeals-procedure-2026.md",
+    "faculty-entrepreneurship-policy-2026-revision.pdf",
+    "hostel-residence-policy-2026.html",
+    "library-borrowing-rules-2026.pdf",
+    "student-affairs-faq-2026.md"
+  ],
+  "actual_chroma_chunk_count": 642,
+  "baseline": "../batch-a-retry-01/chunk-manifest.json",
+  "batch_a_reused_id_count": 612,
+  "batch_a_unchanged_states": [
+    "academic-rules-handbook-jun-2026.pdf",
+    "annual-report-2019-20.pdf",
+    "annual-report-2023-24.pdf",
+    "fee-structure-page.html",
+    "grading-page.html",
+    "prospectus-2026-academic-rules-and-regulations.pdf",
+    "student-handbook-jun-2026.pdf",
+    "undergraduate-academic-rules-aug-2023.pdf"
+  ],
+  "chroma_documents": 14,
+  "chunks": {
+    "by_document": {
+      "academic-rules-handbook-jun-2026.pdf": 74,
+      "annual-report-2019-20.pdf": 81,
+      "annual-report-2023-24.pdf": 297,
+      "examination-appeals-procedure-2026.md": 6,
+      "faculty-entrepreneurship-and-technical-start-ups-policy.pdf": 7,
+      "faculty-entrepreneurship-policy-2026-revision.pdf": 7,
+      "fee-structure-page.html": 7,
+      "grading-page.html": 6,
+      "hostel-residence-policy-2026.html": 6,
+      "library-borrowing-rules-2026.pdf": 6,
+      "prospectus-2026-academic-rules-and-regulations.pdf": 35,
+      "student-affairs-faq-2026.md": 5,
+      "student-handbook-jun-2026.pdf": 89,
+      "undergraduate-academic-rules-aug-2023.pdf": 16
+    },
+    "deleted": 0,
+    "embedded": 30,
+    "metadata_updated": 7,
+    "total_after": 642,
+    "upserted": 30
+  },
+  "collection_metadata_chunks": 642,
+  "collection_uuid": "fae06d6f-5449-4113-b2f1-b398cf483bdd",
+  "consistency": {
+    "active_faculty_filter_mismatch": [],
+    "changed_batch_a_doc_id": [],
+    "changed_batch_a_source": [],
+    "changed_batch_a_text": [],
+    "changed_batch_a_vectors": [],
+    "duplicate_chroma_ids": [],
+    "duplicate_state_ids": [],
+    "missing_batch_a_ids": [],
+    "missing_state_ids": [],
+    "orphan_ids": [],
+    "quarantine_hash_mismatches": [],
+    "rejected_sources_in_chroma": [],
+    "state_metadata_mismatches": [],
+    "unexpected_superseded_flag_changes": []
+  },
+  "faculty": {
+    "active_filtered_chroma_query_count": 7,
+    "active_filtered_chroma_query_sources": [
+      "faculty-entrepreneurship-policy-2026-revision.pdf"
+    ],
+    "archive_hash_matches_batch_a": true,
+    "archive_path": "/data/archive/faculty-entrepreneurship-policy/2022-05/faculty-entrepreneurship-and-technical-start-ups-policy.pdf",
+    "archive_sha256": "c2d5c7648d1593daf34d5c0596ede476e8984b0551830cc1690017e6e22f1359",
+    "archive_sidecar": {
+      "doc_id": "faculty-entrepreneurship-policy",
+      "doc_version": "2022-05",
+      "sha256": "c2d5c7648d1593daf34d5c0596ede476e8984b0551830cc1690017e6e22f1359",
+      "superseded": false
+    },
+    "archive_sidecar_note": "Preserves source manifest metadata. Current supersession is recorded in the persisted index state and Chroma chunk metadata.",
+    "new_chunk_count": 7,
+    "new_status": "active",
+    "old_chunk_count": 7,
+    "old_status": "archived",
+    "shared_doc_id": "faculty-entrepreneurship-policy",
+    "superseded_flag_flips": [
+      "faculty-entrepreneurship-and-technical-start-ups-policy-pdf-0000",
+      "faculty-entrepreneurship-and-technical-start-ups-policy-pdf-0001",
+      "faculty-entrepreneurship-and-technical-start-ups-policy-pdf-0002",
+      "faculty-entrepreneurship-and-technical-start-ups-policy-pdf-0003",
+      "faculty-entrepreneurship-and-technical-start-ups-policy-pdf-0004",
+      "faculty-entrepreneurship-and-technical-start-ups-policy-pdf-0005",
+      "faculty-entrepreneurship-and-technical-start-ups-policy-pdf-0006"
+    ]
+  },
+  "index_id": "6e665ec86456",
+  "index_id_changed": true,
+  "index_id_matches_ingest_report": true,
+  "job_duration_seconds": 150.0,
+  "new_chunks_by_source": {
+    "examination-appeals-procedure-2026.md": 6,
+    "faculty-entrepreneurship-policy-2026-revision.pdf": 7,
+    "hostel-residence-policy-2026.html": 6,
+    "library-borrowing-rules-2026.pdf": 6,
+    "student-affairs-faq-2026.md": 5
+  },
+  "new_chunks_match_accepted_state": true,
+  "old_index_id": "fe1e42ada090",
+  "quarantine": [
+    {
+      "error": null,
+      "failed_checks": {
+        "uniqueness": "near-duplicate of examination-appeals-procedure-2026.md (document cosine 0.9919 >= 0.98)"
+      },
+      "nearest": {
+        "cosine": 0.9919,
+        "source": "examination-appeals-procedure-2026.md"
+      },
+      "sha256": "080458aa9deacc71d229948f55650712f5c8f8fd71f3b31f6f0ac805bdb9280f",
+      "source": "examination-appeals-procedure-2026-reissue.md"
+    },
+    {
+      "error": null,
+      "failed_checks": {
+        "uniqueness": "exact duplicate of fee-structure-page.html (same sha256 of the text)"
+      },
+      "nearest": {
+        "cosine": 1.0,
+        "source": "fee-structure-page.html"
+      },
+      "sha256": "ec8872ae77cac7e96e20e6979933f36b00aaeb0ab3f668a2116e521c655e7b90",
+      "source": "fee-structure-page-2026-27-download.html"
+    },
+    {
+      "error": null,
+      "failed_checks": {
+        "uniqueness": "exact duplicate of annual-report-2019-20.pdf (same sha256 of the text)"
+      },
+      "nearest": {
+        "cosine": 1.0,
+        "source": "annual-report-2019-20.pdf"
+      },
+      "sha256": "4d1961e340b13273bb039805ab5fd5e2c7bd0144a5bd5870f2ce4da13becd650",
+      "source": "annual-report-2019-20-mirror.pdf"
+    },
+    {
+      "error": null,
+      "failed_checks": {
+        "completeness": "page count unknown (no extracted text); file hash differs from the recorded sha256 (corrupt or truncated)",
+        "quality": "extraction failed: PdfminerException: Unexpected EOF"
+      },
+      "nearest": null,
+      "sha256": "4b75d1ef1571dbc47d0df36628daeda590f6629e621aaa9ea691295cb05b294d",
+      "source": "student-clubs-and-societies-guide-2026.pdf"
+    },
+    {
+      "error": null,
+      "failed_checks": {
+        "completeness": "title missing; version/date missing"
+      },
+      "nearest": {
+        "cosine": 0.7588,
+        "source": "hostel-residence-policy-2026.html"
+      },
+      "sha256": "3490101d75314e5941d9219503cc7918b8a0101c96b016d789c678bf85ca01e8",
+      "source": "campus-shuttle-service-notice.html"
+    }
+  ],
+  "same_collection_uuid": true,
+  "state_chunk_count": 642,
+  "state_documents": 14,
+  "vector_dimensions": {
+    "768": 642
+  },
+  "verification_embeddings": 44
+}

@@ -1,0 +1,14 @@
+namespace/rahbar-a3 created
+serviceaccount/rahbar-chroma created
+serviceaccount/rahbar-indexer created
+configmap/rahbar-config created
+service/chroma created
+service/chroma-headless created
+persistentvolumeclaim/ragops-data created
+statefulset.apps/chroma created
+cronjob.batch/reindex created
+job.batch/indexer created
+networkpolicy.networking.k8s.io/allow-dns created
+networkpolicy.networking.k8s.io/chroma-ingress created
+networkpolicy.networking.k8s.io/default-deny-all created
+networkpolicy.networking.k8s.io/indexer-egress created

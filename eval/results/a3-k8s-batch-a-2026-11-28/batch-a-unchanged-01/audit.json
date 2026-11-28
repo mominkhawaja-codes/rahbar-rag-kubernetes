@@ -1,0 +1,67 @@
+{
+  "added_ids": [],
+  "baseline": "../batch-a-retry-01/chunk-manifest.json",
+  "chunks": {
+    "by_document": {
+      "academic-rules-handbook-jun-2026.pdf": 74,
+      "annual-report-2019-20.pdf": 81,
+      "annual-report-2023-24.pdf": 297,
+      "faculty-entrepreneurship-and-technical-start-ups-policy.pdf": 7,
+      "fee-structure-page.html": 7,
+      "grading-page.html": 6,
+      "prospectus-2026-academic-rules-and-regulations.pdf": 35,
+      "student-handbook-jun-2026.pdf": 89,
+      "undergraduate-academic-rules-aug-2023.pdf": 16
+    },
+    "deleted": 0,
+    "embedded": 0,
+    "metadata_updated": 0,
+    "total_after": 612,
+    "upserted": 0
+  },
+  "collection_count": 612,
+  "collection_uuid": "fae06d6f-5449-4113-b2f1-b398cf483bdd",
+  "documents_in_chroma": 9,
+  "documents_skipped": 9,
+  "duplicate_ids": [],
+  "index_id": "fe1e42ada090",
+  "index_id_changed": false,
+  "indexer_seconds": 5.8,
+  "job_duration_seconds": 29.0,
+  "mismatches": {
+    "baseline_metadata": [],
+    "content": [],
+    "dimension": [],
+    "state_metadata": [],
+    "vector": []
+  },
+  "missing_baseline_ids": [],
+  "missing_state_ids": [],
+  "orphan_ids": [],
+  "orphans_removed": 0,
+  "records_compared": 612,
+  "reported_index_id": "fe1e42ada090",
+  "state_byte_identical": true,
+  "state_sha256": "0ee5ab6f1434d199582efd888db0811a2cd396fa066304bbbd5a668446758289",
+  "verification_embeddings": 0,
+  "verification_summary": {
+    "actions": {
+      "index": 9,
+      "quarantine": 0,
+      "supersede": 0
+    },
+    "documents": 9,
+    "documents_with_warnings": 0,
+    "failed_checks": {
+      "completeness": 0,
+      "quality": 0,
+      "recency": 0,
+      "uniqueness": 0
+    },
+    "indexed_versions": {
+      "current": 8,
+      "superseded": 1
+    },
+    "ocr_pages": 35
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "documents": 9,
+  "verified_sha256": [
+    "undergraduate-academic-rules-aug-2023.pdf",
+    "academic-rules-handbook-jun-2026.pdf",
+    "prospectus-2026-academic-rules-and-regulations.pdf",
+    "student-handbook-jun-2026.pdf",
+    "annual-report-2019-20.pdf",
+    "annual-report-2023-24.pdf",
+    "fee-structure-page.html",
+    "grading-page.html",
+    "faculty-entrepreneurship-and-technical-start-ups-policy.pdf"
+  ],
+  "_index_sha256": "dba2acdb9ef39c0c01c98b4990d14235b984f298733d9e2482a3be964794401c",
+  "faculty_doc_id": "faculty-entrepreneurship-policy"
+}

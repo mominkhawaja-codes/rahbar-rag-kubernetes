@@ -1,0 +1,30 @@
+{
+  "name": "batch-b-incremental-01",
+  "uid": "c9415430-d072-4608-9460-36b2262cc3b1",
+  "status": {
+    "completionTime": "2026-11-28T05:50:36Z",
+    "conditions": [
+      {
+        "lastProbeTime": "2026-11-28T05:50:36Z",
+        "lastTransitionTime": "2026-11-28T05:50:36Z",
+        "message": "Reached expected number of succeeded pods",
+        "reason": "CompletionsReached",
+        "status": "True",
+        "type": "SuccessCriteriaMet"
+      },
+      {
+        "lastProbeTime": "2026-11-28T05:50:36Z",
+        "lastTransitionTime": "2026-11-28T05:50:36Z",
+        "message": "Reached expected number of succeeded pods",
+        "reason": "CompletionsReached",
+        "status": "True",
+        "type": "Complete"
+      }
+    ],
+    "ready": 0,
+    "startTime": "2026-11-28T05:48:06Z",
+    "succeeded": 1,
+    "terminating": 0,
+    "uncountedTerminatedPods": {}
+  }
+}

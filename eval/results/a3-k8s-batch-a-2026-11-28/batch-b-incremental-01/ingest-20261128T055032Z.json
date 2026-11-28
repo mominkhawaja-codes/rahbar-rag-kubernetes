@@ -1,0 +1,75 @@
+{
+  "timestamp": "2026-11-28T05:50:32Z",
+  "collection": "rahbar-a3",
+  "embed_model": "nomic-embed-text",
+  "mode": "incremental",
+  "reason": "state and collection found",
+  "documents": {
+    "total": 14,
+    "added": [
+      "library-borrowing-rules-2026.pdf",
+      "hostel-residence-policy-2026.html",
+      "examination-appeals-procedure-2026.md",
+      "faculty-entrepreneurship-policy-2026-revision.pdf",
+      "student-affairs-faq-2026.md"
+    ],
+    "changed": [],
+    "unchanged": [
+      "undergraduate-academic-rules-aug-2023.pdf",
+      "academic-rules-handbook-jun-2026.pdf",
+      "prospectus-2026-academic-rules-and-regulations.pdf",
+      "student-handbook-jun-2026.pdf",
+      "annual-report-2019-20.pdf",
+      "annual-report-2023-24.pdf",
+      "fee-structure-page.html",
+      "grading-page.html"
+    ],
+    "deleted": [],
+    "rejected": [
+      "annual-report-2019-20-mirror.pdf",
+      "campus-shuttle-service-notice.html",
+      "examination-appeals-procedure-2026-reissue.md",
+      "fee-structure-page-2026-27-download.html",
+      "student-clubs-and-societies-guide-2026.pdf"
+    ],
+    "metadata_updated": [
+      "faculty-entrepreneurship-and-technical-start-ups-policy.pdf"
+    ],
+    "newly_archived": [
+      "faculty-entrepreneurship-and-technical-start-ups-policy.pdf"
+    ],
+    "restored": []
+  },
+  "chunks": {
+    "embedded": 30,
+    "upserted": 30,
+    "deleted": 0,
+    "metadata_updated": 7,
+    "total_after": 642,
+    "by_document": {
+      "library-borrowing-rules-2026.pdf": 6,
+      "hostel-residence-policy-2026.html": 6,
+      "examination-appeals-procedure-2026.md": 6,
+      "faculty-entrepreneurship-policy-2026-revision.pdf": 7,
+      "student-affairs-faq-2026.md": 5,
+      "undergraduate-academic-rules-aug-2023.pdf": 16,
+      "academic-rules-handbook-jun-2026.pdf": 74,
+      "prospectus-2026-academic-rules-and-regulations.pdf": 35,
+      "student-handbook-jun-2026.pdf": 89,
+      "annual-report-2019-20.pdf": 81,
+      "annual-report-2023-24.pdf": 297,
+      "fee-structure-page.html": 7,
+      "grading-page.html": 6,
+      "faculty-entrepreneurship-and-technical-start-ups-policy.pdf": 7
+    }
+  },
+  "orphans_removed": 0,
+  "index_id": "6e665ec86456",
+  "index_id_changed": true,
+  "verification_embeddings": 44,
+  "archived_documents": [
+    "faculty-entrepreneurship-and-technical-start-ups-policy.pdf",
+    "undergraduate-academic-rules-aug-2023.pdf"
+  ],
+  "seconds": 135.8
+}

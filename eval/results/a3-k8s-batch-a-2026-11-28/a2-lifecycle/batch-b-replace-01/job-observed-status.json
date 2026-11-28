@@ -1,0 +1,30 @@
+{
+  "name": "batch-b-replace-01",
+  "status": {
+    "completionTime": "2026-11-28T06:04:47Z",
+    "conditions": [
+      {
+        "lastProbeTime": "2026-11-28T06:04:47Z",
+        "lastTransitionTime": "2026-11-28T06:04:47Z",
+        "message": "Reached expected number of succeeded pods",
+        "reason": "CompletionsReached",
+        "status": "True",
+        "type": "SuccessCriteriaMet"
+      },
+      {
+        "lastProbeTime": "2026-11-28T06:04:48Z",
+        "lastTransitionTime": "2026-11-28T06:04:48Z",
+        "message": "Reached expected number of succeeded pods",
+        "reason": "CompletionsReached",
+        "status": "True",
+        "type": "Complete"
+      }
+    ],
+    "ready": 0,
+    "startTime": "2026-11-28T06:04:04Z",
+    "succeeded": 1,
+    "terminating": 0,
+    "uncountedTerminatedPods": {}
+  },
+  "uid": "31f7f932-7d85-43e1-b152-549254eca25c"
+}

@@ -1,0 +1,60 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: rahbar-a3
+resources:
+  - ../../base
+  - ragops-data.yaml
+images:
+  - {name: rahbar-indexer, newTag: a3}
+patches:
+  - path: ingestion-only.yaml
+  - target: {kind: ConfigMap, name: rahbar-config}
+    patch: |-
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: rahbar-config
+      data:
+        CHROMA_COLLECTION: rahbar-a3
+        CORPUS_DIR: /data/lake
+        QUARANTINE_DIR: /data/quarantine
+        ARCHIVE_DIR: /data/archive
+        STATE_DIR: /data/state
+        REPORT_DIR: /data/reports
+        VERIFY_ENABLED: "true"
+        NEAR_DUP_THRESHOLD: "0.98"
+        MIN_CHARS: "200"
+  - target: {kind: Job, name: indexer}
+    patch: |-
+      - {op: add, path: /spec/suspend, value: true}
+  - target: {kind: CronJob, name: reindex}
+    patch: |-
+      apiVersion: batch/v1
+      kind: CronJob
+      metadata:
+        name: reindex
+      spec:
+        suspend: true
+        jobTemplate:
+          spec:
+            template:
+              spec:
+                securityContext:
+                  fsGroup: 10001
+                containers:
+                  - name: indexer
+                    volumeMounts:
+                      - {name: ragops-data, mountPath: /data}
+                volumes:
+                  - name: ragops-data
+                    persistentVolumeClaim:
+                      claimName: ragops-data
+# Keep the initial Job and the scheduled jobs on the same Pod template.
+replacements:
+  - source:
+      kind: CronJob
+      name: reindex
+      fieldPath: spec.jobTemplate.spec.template
+    targets:
+      - select: {kind: Job, name: indexer}
+        fieldPaths: [spec.template]

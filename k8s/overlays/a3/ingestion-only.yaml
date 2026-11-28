@@ -1,0 +1,85 @@
+# A1/A2 needs only Chroma, the indexer and their network policies.
+$patch: delete
+apiVersion: v1
+kind: Service
+metadata: {name: api, namespace: rahbar}
+---
+$patch: delete
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: api, namespace: rahbar}
+---
+$patch: delete
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata: {name: api, namespace: rahbar}
+---
+$patch: delete
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata: {name: api, namespace: rahbar}
+---
+$patch: delete
+apiVersion: v1
+kind: Service
+metadata: {name: ui, namespace: rahbar}
+---
+$patch: delete
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: ui, namespace: rahbar}
+---
+$patch: delete
+apiVersion: v1
+kind: Service
+metadata: {name: redis, namespace: rahbar}
+---
+$patch: delete
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: redis, namespace: rahbar}
+---
+$patch: delete
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: cache-data, namespace: rahbar}
+---
+$patch: delete
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata: {name: rahbar, namespace: rahbar}
+---
+$patch: delete
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: rahbar-api, namespace: rahbar}
+---
+$patch: delete
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: rahbar-ui, namespace: rahbar}
+---
+$patch: delete
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: rahbar-redis, namespace: rahbar}
+---
+$patch: delete
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ingress-to-api, namespace: rahbar}
+---
+$patch: delete
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ingress-to-ui, namespace: rahbar}
+---
+$patch: delete
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: api-egress, namespace: rahbar}
+---
+$patch: delete
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: redis-ingress, namespace: rahbar}

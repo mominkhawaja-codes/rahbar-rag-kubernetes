@@ -1,0 +1,130 @@
+{
+  "active_filtered_chunks": [
+    "faculty-entrepreneurship-policy-2026-revision-pdf-0000",
+    "faculty-entrepreneurship-policy-2026-revision-pdf-0004",
+    "faculty-entrepreneurship-policy-2026-revision-pdf-0005",
+    "faculty-entrepreneurship-policy-2026-revision-pdf-0003",
+    "faculty-entrepreneurship-policy-2026-revision-pdf-0006",
+    "faculty-entrepreneurship-policy-2026-revision-pdf-0001",
+    "faculty-entrepreneurship-policy-2026-revision-pdf-0002"
+  ],
+  "active_filtered_sources": [
+    "faculty-entrepreneurship-policy-2026-revision.pdf"
+  ],
+  "archive_path": "/data/archive/faculty-entrepreneurship-policy/2026-09/faculty-entrepreneurship-policy-2026-revision.pdf",
+  "archive_sha256": "777e95fa073f31cb932bdf3ad1f8484e5e6641e08e9f889b815e968f69af684a",
+  "consistency": {
+    "duplicate_chroma_ids": [],
+    "duplicate_state_ids": [],
+    "metadata_mismatches": [],
+    "missing_ids": [],
+    "orphan_ids": []
+  },
+  "doc_id": "faculty-entrepreneurship-policy",
+  "final_index_id": "0b5fe89165a4",
+  "from_archive": true,
+  "ingest": {
+    "by_document": {
+      "academic-rules-handbook-jun-2026.pdf": 74,
+      "annual-report-2019-20.pdf": 81,
+      "annual-report-2023-24.pdf": 297,
+      "examination-appeals-procedure-2026.md": 6,
+      "faculty-entrepreneurship-and-technical-start-ups-policy.pdf": 7,
+      "faculty-entrepreneurship-policy-2026-revision.pdf": 7,
+      "fee-structure-page.html": 7,
+      "grading-page.html": 6,
+      "hostel-residence-policy-2026.html": 6,
+      "library-borrowing-rules-2026.pdf": 6,
+      "prospectus-2026-academic-rules-and-regulations.pdf": 35,
+      "student-affairs-faq-2026.md": 5,
+      "student-handbook-jun-2026.pdf": 89,
+      "undergraduate-academic-rules-aug-2023.pdf": 16
+    },
+    "deleted": 0,
+    "embedded": 7,
+    "metadata_updated": 0,
+    "total_after": 642,
+    "upserted": 7
+  },
+  "job_duration_seconds": 31.0,
+  "missing_ids": [],
+  "new_policy_status": "active",
+  "old_policy_status": "archived",
+  "prior_index_id": "ff628f3bb684",
+  "reinstated_chunk_ids": [
+    "faculty-entrepreneurship-policy-2026-revision-pdf-0000",
+    "faculty-entrepreneurship-policy-2026-revision-pdf-0001",
+    "faculty-entrepreneurship-policy-2026-revision-pdf-0002",
+    "faculty-entrepreneurship-policy-2026-revision-pdf-0003",
+    "faculty-entrepreneurship-policy-2026-revision-pdf-0004",
+    "faculty-entrepreneurship-policy-2026-revision-pdf-0005",
+    "faculty-entrepreneurship-policy-2026-revision-pdf-0006"
+  ],
+  "reinstated_vectors_identical_to_pre_delete": 7,
+  "restored_lake_file_sha256": "777e95fa073f31cb932bdf3ad1f8484e5e6641e08e9f889b815e968f69af684a",
+  "restored_manifest_entry": {
+    "doc_id": "faculty-entrepreneurship-policy",
+    "doc_version": "2026-09",
+    "file": "faculty-entrepreneurship-policy-2026-revision.pdf",
+    "name": "Faculty Entrepreneurship / Technical Start-ups Policy and Procedure (2026 Revision)",
+    "sha256": "777e95fa073f31cb932bdf3ad1f8484e5e6641e08e9f889b815e968f69af684a",
+    "superseded": false
+  },
+  "status_change": {
+    "active": [
+      "academic-rules-handbook-jun-2026.pdf",
+      "annual-report-2019-20.pdf",
+      "annual-report-2023-24.pdf",
+      "examination-appeals-procedure-2026.md",
+      "faculty-entrepreneurship-policy-2026-revision.pdf",
+      "fee-structure-page.html",
+      "grading-page.html",
+      "hostel-residence-policy-2026.html",
+      "library-borrowing-rules-2026.pdf",
+      "prospectus-2026-academic-rules-and-regulations.pdf",
+      "student-affairs-faq-2026.md",
+      "student-handbook-jun-2026.pdf"
+    ],
+    "archived": [
+      "faculty-entrepreneurship-and-technical-start-ups-policy.pdf",
+      "undergraduate-academic-rules-aug-2023.pdf"
+    ],
+    "changes": {
+      "faculty-entrepreneurship-and-technical-start-ups-policy.pdf": "archived",
+      "faculty-entrepreneurship-policy-2026-revision.pdf": "active"
+    },
+    "chunks_metadata_updated": 7,
+    "copied_from": "/data/archive/faculty-entrepreneurship-policy/2026-09/faculty-entrepreneurship-policy-2026-revision.pdf",
+    "from_archive": true,
+    "index_id": "0b5fe89165a4",
+    "ingest": {
+      "by_document": {
+        "academic-rules-handbook-jun-2026.pdf": 74,
+        "annual-report-2019-20.pdf": 81,
+        "annual-report-2023-24.pdf": 297,
+        "examination-appeals-procedure-2026.md": 6,
+        "faculty-entrepreneurship-and-technical-start-ups-policy.pdf": 7,
+        "faculty-entrepreneurship-policy-2026-revision.pdf": 7,
+        "fee-structure-page.html": 7,
+        "grading-page.html": 6,
+        "hostel-residence-policy-2026.html": 6,
+        "library-borrowing-rules-2026.pdf": 6,
+        "prospectus-2026-academic-rules-and-regulations.pdf": 35,
+        "student-affairs-faq-2026.md": 5,
+        "student-handbook-jun-2026.pdf": 89,
+        "undergraduate-academic-rules-aug-2023.pdf": 16
+      },
+      "deleted": 0,
+      "embedded": 7,
+      "metadata_updated": 0,
+      "total_after": 642,
+      "upserted": 7
+    },
+    "logger": "rahbar.indexer",
+    "msg": "document status changed",
+    "ts": "2026-11-28T06:18:03Z"
+  },
+  "total_after": 642,
+  "total_before": 635,
+  "unexpected_survivor_differences": []
+}

@@ -1,0 +1,108 @@
+{
+  "archived_sources": [
+    "undergraduate-academic-rules-aug-2023.pdf"
+  ],
+  "collection": "rahbar-a3",
+  "collection_uuid": "fae06d6f-5449-4113-b2f1-b398cf483bdd",
+  "consistency": {
+    "bad_vector_dimensions": [],
+    "duplicate_file_hash_count": 0,
+    "duplicate_state_id_count": 0,
+    "duplicated_ids": [],
+    "index_id_matches_report": true,
+    "metadata_mismatches": [],
+    "missing_chunk_ids": [],
+    "orphan_chunk_ids": [],
+    "same_source_identical_text_groups": [
+      [
+        "annual-report-2023-24-pdf-0228",
+        "annual-report-2023-24-pdf-0230",
+        "annual-report-2023-24-pdf-0232"
+      ],
+      [
+        "annual-report-2023-24-pdf-0231",
+        "annual-report-2023-24-pdf-0239",
+        "annual-report-2023-24-pdf-0242"
+      ],
+      [
+        "annual-report-2023-24-pdf-0237",
+        "annual-report-2023-24-pdf-0238",
+        "annual-report-2023-24-pdf-0241"
+      ],
+      [
+        "annual-report-2023-24-pdf-0249",
+        "annual-report-2023-24-pdf-0250"
+      ]
+    ],
+    "seeded_source_hashes_match": true,
+    "verified_sources_match": true
+  },
+  "counts": {
+    "chroma_chunks": 612,
+    "chroma_documents": 9,
+    "new_chunk_embeddings": 612,
+    "state_chunks": 612,
+    "state_documents": 9,
+    "verification_embeddings": 54
+  },
+  "dimensions": 768,
+  "index_id": "fe1e42ada090",
+  "memory": {
+    "effective_headroom_mib": 1173,
+    "node_used_mib": 2246,
+    "windows_available_mib": 301
+  },
+  "model": "nomic-embed-text",
+  "native_comparison": {
+    "chunks": 612,
+    "chunks_with_same_id": 612,
+    "common_ids_with_matching_embedding_hash": 0,
+    "documents": 9,
+    "embedding_comparison_precision": "float32 stored values formatted to 7 significant digits",
+    "k8s_per_source": {
+      "academic-rules-handbook-jun-2026.pdf": 74,
+      "annual-report-2019-20.pdf": 81,
+      "annual-report-2023-24.pdf": 297,
+      "faculty-entrepreneurship-and-technical-start-ups-policy.pdf": 7,
+      "fee-structure-page.html": 7,
+      "grading-page.html": 6,
+      "prospectus-2026-academic-rules-and-regulations.pdf": 35,
+      "student-handbook-jun-2026.pdf": 89,
+      "undergraduate-academic-rules-aug-2023.pdf": 16
+    },
+    "native_per_source": {
+      "academic-rules-handbook-jun-2026.pdf": 74,
+      "annual-report-2019-20.pdf": 81,
+      "annual-report-2023-24.pdf": 297,
+      "faculty-entrepreneurship-and-technical-start-ups-policy.pdf": 7,
+      "fee-structure-page.html": 7,
+      "grading-page.html": 6,
+      "prospectus-2026-academic-rules-and-regulations.pdf": 35,
+      "student-handbook-jun-2026.pdf": 89,
+      "undergraduate-academic-rules-aug-2023.pdf": 16
+    },
+    "ocr_pages": 35,
+    "same_source_repeated_text_groups_present_as_equal_vectors_within_native_run": 0,
+    "same_source_repeated_text_groups_with_matching_native_vectors": 0
+  },
+  "verification": {
+    "actions": {
+      "index": 9,
+      "quarantine": 0,
+      "supersede": 0
+    },
+    "documents": 9,
+    "documents_with_warnings": 0,
+    "failed_checks": {
+      "completeness": 0,
+      "quality": 0,
+      "recency": 0,
+      "uniqueness": 0
+    },
+    "indexed_versions": {
+      "current": 8,
+      "superseded": 1
+    },
+    "ocr_pages": 35
+  }
+}
